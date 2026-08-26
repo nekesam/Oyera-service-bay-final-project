@@ -1,0 +1,252 @@
+import Stock from '../models/Stock.mjs';
+import { dashboardPermissionsByRole } from './dashboardControllers.mjs';
+import { sanitizeStockPayload } from '../Validation/userValidation.mjs';
+
+const getRolePermissions = (role) => {
+	return dashboardPermissionsByRole[role] || dashboardPermissionsByRole.Technician;
+};
+
+const canManageStockByRole = (role) => role === 'Admin' || role === 'Senior technician';
+
+const defaultRegisterStockData = {
+	stockId: '',
+	itemName: '',
+	category: '',
+	supplier: '',
+	quantity: '',
+	unit: '',
+	unitPrice: '',
+	date: '',
+	storageLocation: '',
+	description: '',
+};
+
+const defaultQuickStockData = {
+	itemName: '',
+	category: '',
+	price: '',
+	quantity: '',
+};
+
+export const getStockPage = (req, res) => {
+	const role = req.session?.userRole;
+	res.render('registerStock', {
+		permissions: getRolePermissions(role),
+		canManageStock: canManageStockByRole(role),
+		formData: defaultRegisterStockData,
+		errorMessage: null,
+	});
+};
+
+export const getStockRecordsPage = async (req, res) => {
+	try {
+		const allStock = await Stock.find({}).sort({ createdAt: -1 }).lean();
+		const role = req.session?.userRole;
+		res.render('stockList', {
+			allStock,
+			permissions: getRolePermissions(role),
+			canManageStock: canManageStockByRole(role),
+		});
+	} catch (error) {
+		console.error(error);
+		res.status(500).send('Failed to load stock records.');
+	}
+};
+
+export const createStockItem = async (req, res) => {
+	try {
+		const cleaned = sanitizeStockPayload(req.body);
+		if (req.stockValidationErrors?.length) {
+			const role = req.session?.userRole;
+			return res.status(400).render('registerStock', {
+				permissions: getRolePermissions(role),
+				canManageStock: canManageStockByRole(role),
+				formData: {
+					...defaultRegisterStockData,
+					...cleaned,
+				},
+				errorMessage: req.stockValidationErrors.join(' '),
+			});
+		}
+
+		const newStock = new Stock({
+			...cleaned,
+			stockId: cleaned.stockId || `STK-${Date.now()}`,
+			registeredBy: req.session.userId
+		});
+		await newStock.save();
+		console.log(newStock);
+	    res.redirect('/registerStock/stockList');
+	} catch (error) {
+		console.error(error);
+		const role = req.session?.userRole;
+		const duplicateEntry = error?.code === 11000;
+		const cleaned = sanitizeStockPayload(req.body);
+		res.status(400).render('registerStock', {
+			permissions: getRolePermissions(role),
+			canManageStock: canManageStockByRole(role),
+			formData: {
+				...defaultRegisterStockData,
+				...cleaned,
+			},
+			errorMessage: duplicateEntry
+				? 'Stock ID already exists. Use a different one or leave it blank for auto-generation.'
+				: 'Failed to add stock item. Check your input values and try again.',
+		});
+	}
+};
+
+export const getStockForm = (req, res) => {
+	const role = req.session?.userRole;
+	res.render('addStock', {
+		permissions: getRolePermissions(role),
+		canManageStock: canManageStockByRole(role),
+		formData: defaultQuickStockData,
+		errorMessage: null,
+	});
+};
+
+export const addStock = async (req, res) => {
+	try {
+		const cleaned = sanitizeStockPayload(req.body);
+		if (req.stockValidationErrors?.length) {
+			const role = req.session?.userRole;
+			return res.status(400).render('addStock', {
+				permissions: getRolePermissions(role),
+				canManageStock: canManageStockByRole(role),
+				formData: {
+					...defaultQuickStockData,
+					itemName: cleaned.itemName,
+					category: cleaned.category,
+					price: cleaned.unitPrice,
+					quantity: cleaned.quantity,
+				},
+				errorMessage: req.stockValidationErrors.join(' '),
+			});
+		}
+
+		const payload = {
+			...cleaned,
+			registeredBy: req.session.userId,
+			stockId: cleaned.stockId || `STK-${Date.now()}`,
+			unitPrice: cleaned.unitPrice
+		};
+
+		const newStock = new Stock(payload);
+		await newStock.save();
+		res.redirect('/registerStock/stockList');
+	} catch (error) {
+		console.error(error);
+		const role = req.session?.userRole;
+		const duplicateEntry = error?.code === 11000;
+		const cleaned = sanitizeStockPayload(req.body);
+		res.status(400).render('addStock', {
+			permissions: getRolePermissions(role),
+			canManageStock: canManageStockByRole(role),
+			formData: {
+				...defaultQuickStockData,
+				itemName: cleaned.itemName,
+				category: cleaned.category,
+				price: cleaned.unitPrice,
+				quantity: cleaned.quantity,
+			},
+			errorMessage: duplicateEntry
+				? 'Stock ID already exists. Try again.'
+				: 'Error adding stock. Check your input values and try again.',
+		});
+	}
+}
+
+// get all stock from the DB
+export const getAllStock = async(req, res) =>{
+	try {
+		const allStock = await Stock.find()
+			.sort({ createdAt: -1 });
+		const role = req.session?.userRole;
+		res.render('stockList', {
+			allStock,
+			permissions: getRolePermissions(role),
+			canManageStock: canManageStockByRole(role),
+		})
+	} catch (error) {
+	   console.error('Error fetching stock', error) 
+	   res.status(500).send('Error fetching stock')
+	}
+}
+
+export const getEditStockForm = async(req, res) =>{
+	try {
+		const stock = await Stock.findById(req.params.id).lean()
+		if(!stock){
+			return res.status(404).send('Stock item not found')
+		}
+		const role = req.session?.userRole;
+		res.render('editStock', {
+			stock: {
+				...stock,
+				price: stock.unitPrice,
+			},
+			permissions: getRolePermissions(role),
+			canManageStock: canManageStockByRole(role),
+			errorMessage: null,
+		})
+	} catch (error) {
+		console.error('Error loading editStockForm', error)
+		res.status(500).send('Error loading Edit Stock Form')
+	}
+}
+
+export const updateStock = async(req, res) =>{
+	try {
+		const cleaned = sanitizeStockPayload(req.body);
+		if (req.stockValidationErrors?.length) {
+			const role = req.session?.userRole;
+			const stock = await Stock.findById(req.params.id).lean();
+			return res.status(400).render('editStock', {
+				stock: {
+					...(stock || {}),
+					...cleaned,
+					price: cleaned.unitPrice,
+				},
+				permissions: getRolePermissions(role),
+				canManageStock: canManageStockByRole(role),
+				errorMessage: req.stockValidationErrors.join(' '),
+			});
+		}
+
+		await Stock.findByIdAndUpdate(
+			req.params.id,
+			{
+				...cleaned,
+				unitPrice: cleaned.unitPrice,
+			},
+			{ runValidators: true }
+		)
+		res.redirect('/registerStock/stockList')
+	} catch (error) {
+		console.error('Error updating stock', error)
+		const role = req.session?.userRole;
+		const stock = await Stock.findById(req.params.id).lean();
+		const cleaned = sanitizeStockPayload(req.body);
+		res.status(400).render('editStock', {
+			stock: {
+				...(stock || {}),
+				...cleaned,
+				price: cleaned.unitPrice,
+			},
+			permissions: getRolePermissions(role),
+			canManageStock: canManageStockByRole(role),
+			errorMessage: 'Error updating stock. Check your input values and try again.',
+		})
+	}
+}
+
+export const deleteStock = async(req, res)=>{
+	try {
+		await Stock.findByIdAndDelete(req.params.id)
+		res.redirect('/registerStock/stockList')
+	} catch (error) {
+		console.error('Error deleting stock', error)
+		res.status(500).send('Error deleting stock')
+	}
+}
