@@ -1,0 +1,41 @@
+doctype html
+head
+  meta(charset='UTF-8')
+  meta(name='viewport' content='width=device-width, initial-scale=1.0')
+  title Oyera Auto Service Bay
+  link(rel='stylesheet' href='/css/signUp.css')
+  link(href='https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css' rel='stylesheet' integrity='sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB' crossorigin='anonymous')
+ 
+.overlay.d-flex.align-items-center.justify-content-center
+  .container
+    .row.justify-content-center
+      .col-md-6.col-lg-5
+        .signup-card
+          img(src='/images/service-logo.png' alt='Oyera Auto Service Bay Logo', class="logo")
+          h2.text-center.mb-4 Create Account
+          if errorMessage
+            .alert.alert-danger.mb-3= errorMessage
+          form(method="POST", action="/signup") 
+            .mb-3
+              label.form-label(for='fullName') Full Name
+              input#fullName.form-control(type='text' name='fullName' placeholder='Enter your full name' value=formData && formData.fullName ? formData.fullName : '')
+            .mb-3
+              label.form-label(for='email') Email Address or Phone Number
+              input#email.form-control(name='identifier' type='text' placeholder='Enter your email' value=formData && formData.identifier ? formData.identifier : '')
+            .mb-3
+              label.form-label(for='role') Role
+              select#role.form-select(name='role')
+                option(value='' selected=!formData || !formData.role disabled='') Select role
+                option(value='Admin' selected=formData && formData.role === 'Admin') Admin
+                option(value='Senior technician' selected=formData && formData.role === 'Senior technician') Senior technician
+                option(value='Technician' selected=formData && formData.role === 'Technician') Technician
+            .mb-3
+              label.form-label(for='password') Password
+              input#password.form-control(name='password' type='password' placeholder='Create a password')
+            .d-grid
+              button.btn.btn-primary.btn-lg
+                | Sign Up
+          p.text-center.mt-4
+            | Already have an account?
+            a(href='login') Login
+script(src='https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js')

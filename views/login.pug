@@ -1,0 +1,28 @@
+doctype html
+head
+  meta(charset='UTF-8')
+  meta(name='viewport' content='width=device-width, initial-scale=1.0')
+  title Oyera Auto Service Bay
+  link(rel='stylesheet' href='/css/signUp.css')
+  link(href='https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css' rel='stylesheet' integrity='sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB' crossorigin='anonymous')
+ 
+.overlay.d-flex.align-items-center.justify-content-center
+  .container
+    .row.justify-content-center
+      .col-md-6.col-lg-5
+        .signup-card
+          img(src='/images/service-logo.png' alt='Oyera Auto Service Bay Logo', class="logo")
+          h2.text-center.mb-4 Login 
+          if errorMessage
+            .alert.alert-danger.mb-3= errorMessage
+          form(method="POST", action="/login") 
+            .mb-3
+              label.form-label(for='email') Email Address or Phone Number
+              input#email.form-control(name='identifier' type='text' placeholder='Enter your email' value=formData && formData.identifier ? formData.identifier : '')
+            .mb-3
+              label.form-label(for='password') Password
+              input#password.form-control(name='password' type='password' placeholder='Enter your password')
+            .d-grid
+              button.btn.btn-primary.btn-lg
+                | Login
+         

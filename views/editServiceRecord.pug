@@ -1,0 +1,153 @@
+extends layout
+
+block content
+  .container.mt-5.mb-5
+    .row.justify-content-center
+      .col-lg-8
+        .card.p-5.shadow-sm
+          h2.mb-4.fw-bold Service Record
+          form(action=`/records/edit/${record._id}`, method="POST")
+            .row.mb-3
+              .col-md-6
+                label.form-label Customer Name
+                input.form-control(type="text", name="customerName", value=record.customerName, required)
+              .col-md-6
+                label.form-label Car Number Plate
+                input.form-control(type="text", name="carPlate", value=record.carPlate, required)
+
+            //- includes checks whether an item is selected in the servicesDone array and sets the selected attribute accordingly
+            .mb-3
+              label.form-label Services Performed (Hold Ctrl/Cmd to select multiple)
+              select.form-select(name="servicesDone", multiple, required, size="5")
+                option(value="Engine Oil and Filters" selected=record.servicesDone.includes('Engine Oil and Filters')) Engine Oil and Filters
+                option(value="Gear Box Oil and Filters" selected=record.servicesDone.includes('Gear Box Oil and Filters')) Gear Box Oil and Filters
+                option(value="Brake Fluids" selected=record.servicesDone.includes('Brake Fluids')) Brake Fluids
+                option(value="Brake Pads Change" selected=record.servicesDone.includes('Brake Pads Change')) Brake Pads Change
+                option(value="Greasing" selected=record.servicesDone.includes('Greasing')) Greasing
+                option(value="Other Minor Repairs" selected=record.servicesDone.includes('Other Minor Repairs')) Other Minor Repairs
+                option(value="Wheel Alignment" selected=record.servicesDone.includes('Wheel Alignment')) Wheel Alignment
+                option(value="Wheel Balance" selected=record.servicesDone.includes('Wheel Balance')) Wheel Balance
+            
+            //- DYNAMIC PARTS SECTION
+            .mb-4.p-3.border.rounded.bg-light
+              label.form-label.fw-bold Parts & Oils Used
+              #parts-container
+                if record.partsUsed && record.partsUsed.length
+                  each part in record.partsUsed
+                    .row.mb-2.align-items-center.part-row
+                      .col-md-7
+                        select.form-select(name="partIds", required)
+                          option(value="", disabled) Select Item...
+                          each items, categoryName in stockByCategory
+                            optgroup(label = categoryName)
+                              each item in items
+                                option(value=item._id data-price=(item.unitPrice || 0) selected=(String(item._id) === String(part.stockId) || item.itemName === part.itemName)) #{item.itemName} (In Stock: #{item.quantity})
+                      .col-md-3
+                        input.form-control(type="number", name="partQuantities", min="1", value=part.quantity, placeholder="Qty", required)
+                      .col-md-2
+                        button.btn.btn-danger.btn-sm.w-100(type="button", onclick="this.closest('.part-row').remove()")
+                          i.bi.bi-trash
+              
+              button.btn.btn-outline-primary.btn-sm.mt-2(type="button", onclick="addPartRow()")
+                i.bi.bi-plus-circle.me-1
+                | Add Part/Oil
+            
+            .row.mb-4
+              .col-md-6
+                label.form-label Assigned Technician(s) (Hold Ctrl/Cmd to select multiple)
+                select.form-select(name="technicians", multiple, required, size="3")
+                  each tech in technicians
+                    option(value=tech._id selected=record.technicians.some(t => t.toString() === tech._id.toString()))= tech.fullName
+              .col-md-6
+                label.form-label Total Cost (UGX, Auto Calculated)
+                input#totalCostDisplay.form-control(type="number", readonly, value=record.totalCost)
+
+            .d-grid
+              button.btn.btn-primary.btn-lg(type="submit") Update Record
+              a.btn.btn-outline-secondary.btn-lg(href="/records") Cancel
+
+  //- HIDDEN TEMPLATE FOR DYNAMIC ROWS
+  template#part-row-template
+    .row.mb-2.align-items-center.part-row
+      .col-md-7
+        select.form-select(name="partIds", required)
+          option(value="", disabled, selected) Select Item...
+          each items, categoryName in stockByCategory
+            optgroup(label=categoryName)
+              each item in items
+                option(value=item._id data-price=(item.unitPrice || 0)) #{item.itemName} (In Stock: #{item.quantity})
+      .col-md-3
+        input.form-control(type="number", name="partQuantities", min="1", value="1", placeholder="Qty", required)
+      .col-md-2
+        button.btn.btn-danger.btn-sm.w-100(type="button", onclick="this.closest('.part-row').remove()")
+          i.bi.bi-trash
+
+  //- CLIENT-SIDE LOGIC
+  script.
+    const LABOUR_CHARGE = 20000;
+    const SERVICE_PRICES = {
+      'Wheel Alignment': 30000,
+      'Wheel Balance': 20000
+    };
+
+    function recalculateTotal() {
+      const servicesSelect = document.querySelector('select[name="servicesDone"]');
+      const totalCostDisplay = document.getElementById('totalCostDisplay');
+      const partRows = document.querySelectorAll('#parts-container .part-row');
+
+      let servicesCost = 0;
+      if (servicesSelect) {
+        const selectedServices = Array.from(servicesSelect.selectedOptions).map((opt) => opt.value);
+        servicesCost = selectedServices.reduce((sum, serviceName) => sum + (SERVICE_PRICES[serviceName] || 0), 0);
+      }
+
+      let partsCost = 0;
+      partRows.forEach((row) => {
+        const partSelect = row.querySelector('select[name="partIds"]');
+        const qtyInput = row.querySelector('input[name="partQuantities"]');
+        if (!partSelect || !qtyInput) return;
+
+        const selectedOption = partSelect.options[partSelect.selectedIndex];
+        const unitPrice = Number(selectedOption?.dataset?.price || 0);
+        const qty = Number(qtyInput.value || 0);
+        if (qty > 0) {
+          partsCost += unitPrice * qty;
+        }
+      });
+
+      if (totalCostDisplay) {
+        totalCostDisplay.value = LABOUR_CHARGE + servicesCost + partsCost;
+      }
+    }
+
+    function addPartRow() {
+      const container = document.getElementById('parts-container');
+      const template = document.getElementById('part-row-template');
+      const clone = template.content.cloneNode(true);
+      container.appendChild(clone);
+      recalculateTotal();
+    }
+
+    document.addEventListener('change', (event) => {
+      if (event.target.matches('select[name="servicesDone"], select[name="partIds"]')) {
+        recalculateTotal();
+      }
+    });
+
+    document.addEventListener('input', (event) => {
+      if (event.target.matches('input[name="partQuantities"]')) {
+        recalculateTotal();
+      }
+    });
+
+    document.addEventListener('click', (event) => {
+      if (event.target.closest('button[onclick*="remove"]')) {
+        requestAnimationFrame(recalculateTotal);
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const rows = document.querySelectorAll('#parts-container .part-row');
+      if (rows.length === 0) addPartRow();
+      recalculateTotal();
+    });

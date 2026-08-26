@@ -1,0 +1,247 @@
+extends layout
+
+block headStyles
+  link(rel='stylesheet' href='/css/vehicles.css')
+
+block content
+  .main-container
+
+    - const activePage = 'vehicles'
+    include partials/sidebar
+
+    main.content
+
+      .vehicles-page
+
+        //- Page Heading
+        .page-heading
+
+          .heading-left
+
+            .breadcrumb
+              a(href='/dashboard') Dashboard
+              i.fas.fa-chevron-right
+              span Vehicles
+
+            h1 Vehicles
+            p Manage vehicle records, owners, service history and vehicle information.
+
+          a.add-vehicle-btn(href='/vehicles/register')
+            i.fas.fa-plus
+            | Register Vehicle
+
+        //- Statistics
+        section.vehicle-stats
+
+          article.vehicle-stat-card
+
+            .vehicle-stat-icon.blue
+              i.fas.fa-car
+
+            .vehicle-stat-content
+              p Total Vehicles
+              h2= dashboardStats.totalVehicles
+              span.stat-note.blue-text
+                i.fas.fa-circle
+                | Registered vehicles
+
+          article.vehicle-stat-card
+
+            .vehicle-stat-icon.green
+              i.fas.fa-screwdriver-wrench
+
+            .vehicle-stat-content
+              p Serviced Today
+              h2= dashboardStats.servicedToday
+              span.stat-note.green-text
+                i.fas.fa-circle
+                | Vehicles today
+
+          article.vehicle-stat-card
+
+            .vehicle-stat-icon.orange
+              i.fas.fa-car-side
+
+            .vehicle-stat-content
+              p Small Vehicles
+              h2= dashboardStats.smallVehicles
+              span.stat-note.orange-text
+                i.fas.fa-circle
+                | Registered
+
+          article.vehicle-stat-card
+
+            .vehicle-stat-icon.purple
+              i.fas.fa-truck
+
+            .vehicle-stat-content
+              p Commercial & Heavy
+              h2= dashboardStats.commercialHeavyVehicles
+              span.stat-note.purple-text
+                i.fas.fa-circle
+                | Registered
+
+        //- Main Vehicle Layout
+        .vehicle-layout
+
+          //- Vehicle List
+          section.vehicle-list.card-panel
+
+            .list-header
+
+              h2 Vehicle Records
+
+              .list-controls
+
+                select#vehicleTypeFilter
+                  option(value='') All Vehicle Types
+                  option(value='small') Small Vehicle
+                  option(value='commercial') Commercial Vehicle
+                  option(value='heavy') Heavy Vehicle
+
+                .vehicle-search
+                  i.fas.fa-search
+                  input(
+                    type='text'
+                    placeholder='Search vehicle...'
+                  )
+
+            .table-wrapper
+
+              table.vehicle-table
+
+                thead
+                  tr
+                    th #
+                    th Vehicle
+                    th Registration No.
+                    th Owner
+                    th Vehicle Type
+                    th Last Service
+                    th Status
+                    th Actions
+
+                tbody
+                  if vehicleRecords.length
+                    each vehicle, index in vehicleRecords
+                      tr
+                        td= index + 1
+
+                        td
+                          .vehicle-name
+                            .vehicle-icon
+                              i.fas(class=vehicle.iconClass)
+                            .vehicle-details
+                              strong= vehicle.vehicleName
+                              span= vehicle.color
+
+                        td= vehicle.registrationNo
+
+                        td= vehicle.ownerName
+
+                        td
+                          span.type-badge(class=vehicle.typeClass)= vehicle.vehicleTypeLabel
+
+                        td= vehicle.lastServiceDisplay
+
+                        td
+                          span.status-badge(class=vehicle.statusClass)= vehicle.status
+
+                        td
+                          a.btn.btn-sm.btn-outline-primary.me-1(href=`/vehicles/edit/${vehicle._id}`)
+                            i.bi.bi-pencil
+                          form.d-inline(action=`/vehicles/delete/${vehicle._id}` method='post' onsubmit="return confirm('Are you sure you want to delete this vehicle?');")
+                            button.btn.btn-sm.btn-danger(type='submit')
+                              i.bi.bi-trash
+                  else
+                    tr
+                      td(colspan='8') No vehicles found.
+
+          //- Right Sidebar
+          aside.vehicle-sidebar
+
+            //- Quick Actions
+            section.side-card
+
+              h2 Quick Actions
+
+              a.quick-action(href='/vehicles/register')
+
+                .quick-icon.blue
+                  i.fas.fa-car
+
+                .quick-text
+                  strong Register Vehicle
+                  span Add a new vehicle record
+
+                i.fas.fa-chevron-right
+
+              a.quick-action(href='/customers/register')
+
+                .quick-icon.green
+                  i.fas.fa-user-plus
+
+                .quick-text
+                  strong Register Customer
+                  span Add vehicle owner
+
+                i.fas.fa-chevron-right
+
+              a.quick-action(href='/addRecord')
+
+                .quick-icon.orange
+                  i.fas.fa-screwdriver-wrench
+
+                .quick-text
+                  strong Record Service
+                  span Register vehicle service
+
+                i.fas.fa-chevron-right
+
+              a.quick-action(href='/dashboard')
+
+                .quick-icon.purple
+                  i.fas.fa-chart-column
+
+                .quick-text
+                  strong Vehicle Reports
+                  span View vehicle reports
+
+                i.fas.fa-chevron-right
+
+            //- Vehicle Type Overview
+            section.side-card
+
+              h2 Vehicle Type Overview
+
+              .vehicle-overview
+
+                .vehicle-circle
+                  .circle-inner
+                    strong= dashboardStats.totalVehicles
+                    span Vehicles
+
+                .vehicle-type-list
+
+                  .type-row
+                    span.type-dot.small-dot
+                    span Small Vehicles
+                    strong= dashboardStats.smallVehicles
+
+                  .type-row
+                    span.type-dot.commercial-dot
+                    span Commercial
+                    strong= dashboardStats.commercialVehicles
+
+                  .type-row
+                    span.type-dot.heavy-dot
+                    span Heavy Vehicles
+                    strong= dashboardStats.heavyVehicles
+
+        //- Footer
+        footer.page-footer
+          span © 2026 Oyera Auto Service Bay Ltd. All rights reserved.
+          span Professional care for every ride.
+
+block pageScripts
+  

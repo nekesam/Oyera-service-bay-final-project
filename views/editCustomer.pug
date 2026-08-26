@@ -1,0 +1,56 @@
+extends layout
+
+block headStyles
+  link(rel='stylesheet' href='/css/vehicles.css')
+
+block content
+  .main-container
+    - const activePage = 'customers'
+    include partials/sidebar
+
+    main.content
+      .register-vehicle-page
+        .page-heading
+          .heading-left
+            .breadcrumb
+              a(href='/dashboard') Dashboard
+              i.fas.fa-chevron-right
+              a(href='/customers/records') Customers
+              i.fas.fa-chevron-right
+              span Edit Customer
+            h1 Edit Customer
+            p Update customer profile and contact details.
+
+        .register-card
+          if errorMessage
+            .form-alert= errorMessage
+
+          form.register-form(method='post' action=`/customers/edit/${customer._id}`)
+            .form-grid
+              .form-field
+                label(for='customerId') Customer ID
+                input#customerId(type='text' name='customerId' value=customer.customerId || '')
+
+              .form-field
+                label(for='firstName') First Name
+                input#firstName(type='text' name='firstName' required value=customer.firstName || '')
+
+              .form-field
+                label(for='lastName') Last Name
+                input#lastName(type='text' name='lastName' required value=customer.lastName || '')
+
+              .form-field
+                label(for='phone') Phone Number
+                input#phone(type='tel' name='phone' value=customer.phone || '')
+
+              .form-field
+                label(for='email') Email Address
+                input#email(type='email' name='email' value=customer.email || '')
+
+              .form-field
+                label(for='address') Physical Address
+                input#address(type='text' name='address' value=customer.address || '')
+
+            .form-actions
+              a.btn-secondary(href='/customers/records') Cancel
+              button.btn-primary(type='submit') Save Changes

@@ -1,0 +1,183 @@
+extends layout
+
+block headStyles
+  link(rel='stylesheet' href='/css/customerRecords.css')
+
+block content
+  .main-container
+    - const activePage = 'customers'
+    include partials/sidebar
+    main.content
+      .customers-page
+        - const totalCustomers = records.length
+        - const withEmail = records.filter((record) => record.email).length
+        - const withPhone = records.filter((record) => record.phone).length
+        - const withoutPhone = totalCustomers - withPhone
+
+        .page-heading
+          .heading-left
+            .breadcrumb
+              a(href='/dashboard') Dashboard
+              i.fas.fa-chevron-right
+              span Customers
+            h1 Customers
+            p Manage customer profiles and contact details.
+
+          a.add-customer-btn(href='/customers/register')
+            i.fas.fa-user-plus
+            | Register Customer
+
+        section.customer-stats
+          article.customer-stat-card
+            .customer-stat-icon.blue
+              i.fas.fa-users
+            .customer-stat-content
+              p Total Customers
+              h2= totalCustomers
+              span.stat-note.blue-text
+                i.fas.fa-circle
+                | Registered customers
+
+          article.customer-stat-card
+            .customer-stat-icon.green
+              i.fas.fa-envelope
+            .customer-stat-content
+              p With Email
+              h2= withEmail
+              span.stat-note.green-text
+                i.fas.fa-circle
+                | Reachable by email
+
+          article.customer-stat-card
+            .customer-stat-icon.orange
+              i.fas.fa-phone
+            .customer-stat-content
+              p With Phone
+              h2= withPhone
+              span.stat-note.orange-text
+                i.fas.fa-circle
+                | Reachable by call
+
+          article.customer-stat-card
+            .customer-stat-icon.purple
+              i.fas.fa-user-slash
+            .customer-stat-content
+              p Missing Phone
+              h2= withoutPhone
+              span.stat-note.purple-text
+                i.fas.fa-circle
+                | Needs follow-up
+
+        .customer-layout
+          section.customer-list.card-panel
+            .list-header
+              h2 Customer Directory
+              .list-controls
+                .customer-search
+                  i.fas.fa-search
+                  input(type='text' placeholder='Search customer...')
+
+            .table-wrapper
+              table.customer-table
+                thead
+                  tr
+                    th #
+                    th Customer
+                    th Customer ID
+                    th Phone
+                    th Email
+                    th Address
+                    th Actions
+
+                tbody
+                  if records.length
+                    each record, index in records
+                      - const fullName = `${record.firstName || ''} ${record.lastName || ''}`.trim() || 'Unknown Customer'
+                      - const initials = fullName.split(' ').filter(Boolean).slice(0, 2).map((part) => part[0].toUpperCase()).join('') || '--'
+                      tr
+                        td= index + 1
+                        td
+                          .customer-name
+                            .avatar= initials
+                            .customer-details
+                              strong= fullName
+                              span Customer Profile
+                        td= record.customerId || '-'
+                        td= record.phone || '-'
+                        td= record.email || '-'
+                        td= record.address || '-'
+                        td
+                          .table-actions
+                            a.action-link.edit(href=`/customers/edit/${record._id}`) Edit
+                            form.action-form(action=`/customers/delete/${record._id}` method='POST' onsubmit="return confirm('Delete this customer?');")
+                              button.action-btn.delete(type='submit') Delete
+                  else
+                    tr
+                      td(colspan='7') No customers registered yet.
+
+            .table-footer
+              span Showing 1 to #{records.length} of #{totalCustomers} customers
+
+          aside.customer-sidebar
+            section.side-card
+              h2 Quick Actions
+
+              a.quick-action(href='/customers/register')
+                .quick-icon.blue
+                  i.fas.fa-user-plus
+                .quick-text
+                  strong Register Customer
+                  span Add a new customer profile
+                i.fas.fa-chevron-right
+
+              a.quick-action(href='/vehicles/register')
+                .quick-icon.green
+                  i.fas.fa-car
+                .quick-text
+                  strong Register Vehicle
+                  span Add customer vehicle
+                i.fas.fa-chevron-right
+
+              a.quick-action(href='/addRecord')
+                .quick-icon.orange
+                  i.fas.fa-screwdriver-wrench
+                .quick-text
+                  strong Capture Service
+                  span Record a new service
+                i.fas.fa-chevron-right
+
+              a.quick-action(href='/dashboard')
+                .quick-icon.purple
+                  i.fas.fa-chart-column
+                .quick-text
+                  strong Customer Overview
+                  span View dashboard metrics
+                i.fas.fa-chevron-right
+
+            section.side-card
+              h2 Customer Contact Overview
+              .customer-overview
+                .customer-circle
+                  .circle-inner
+                    strong= totalCustomers
+                    span Customers
+
+                .contact-list
+                  .contact-row
+                    span.contact-dot.email-dot
+                    span With Email
+                    strong= withEmail
+
+                  .contact-row
+                    span.contact-dot.phone-dot
+                    span With Phone
+                    strong= withPhone
+
+                  .contact-row
+                    span.contact-dot.missing-dot
+                    span Missing Phone
+                    strong= withoutPhone
+
+        footer.page-footer
+          span © 2026 Oyera Auto Service Bay Ltd. All rights reserved.
+          span Professional care for every ride.

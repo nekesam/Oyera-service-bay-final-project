@@ -1,0 +1,50 @@
+extends layout
+
+block headStyles
+  link(rel='stylesheet' href='/css/registerTechnician.css')
+
+block content
+  .main-container
+    - const activePage = 'technicians'
+    include partials/sidebar
+
+    main.content
+      .register-technician-page
+        .page-heading
+          .heading-left
+            .breadcrumb
+              a(href='/dashboard') Dashboard
+              i.fas.fa-chevron-right
+              a(href='/technicians') Technicians
+              i.fas.fa-chevron-right
+              span Register Technician
+            h1 Register Technician
+            p Add a new technician profile to your service team.
+
+        .register-card
+          if errorMessage
+            .form-alert= errorMessage
+
+          form.register-form(method='post' action='/technicians/register')
+            .form-grid
+              .form-field
+                label(for='fullName') Full Name
+                input#fullName(type='text' name='fullName' placeholder='Enter full name' required value=formData.fullName)
+
+              .form-field
+                label(for='identifier') Email or Phone
+                input#identifier(type='text' name='identifier' placeholder='example@mail.com or +2567...' required value=formData.identifier)
+
+              .form-field
+                label(for='role') Technician Role
+                select#role(name='role' required)
+                  option(value='Technician' selected=formData.role === 'Technician') Technician
+                  option(value='Senior technician' selected=formData.role === 'Senior technician') Senior technician
+
+              .form-field
+                label(for='password') Password
+                input#password(type='password' name='password' placeholder='Create temporary password' required)
+
+            .form-actions
+              a.btn-secondary(href='/technicians') Cancel
+              button.btn-primary(type='submit') Save Technician

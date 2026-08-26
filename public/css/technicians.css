@@ -1,0 +1,973 @@
+:root {
+    --bg: #f5f7fb;
+    --surface: #ffffff;
+    --text: #172033;
+    --muted: #64748b;
+    --border: #e2e8f0;
+    --primary: #1769e8;
+    --primary-dark: #0f56c9;
+    --sidebar: #0d1b2e;
+    --shadow: 0 5px 18px rgba(15, 23, 42, 0.06);
+    --radius: 10px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+}
+
+/* Main-content */
+.content {
+    flex: 1;
+    min-width: 0;
+}
+
+.technicians-page {
+    min-height: 100vh;
+}
+
+/* Top Header */
+
+.top-header {
+    height: 72px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 0 28px;
+    gap: 30px;
+}
+
+.header-search {
+    width: 510px;
+    height: 40px;
+
+    border: 1px solid #cbd5e1;
+    border-radius: 7px;
+
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 0 13px;
+
+    color: #64748b;
+}
+
+.header-search input {
+    border: none;
+    outline: none;
+    flex: 1;
+
+    font-size: 14px;
+    color: var(--text);
+}
+
+.header-search .search-end {
+    color: #475569;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+}
+
+.notification {
+    position: relative;
+    font-size: 19px;
+    color: #475569;
+}
+
+.notification-count {
+    position: absolute;
+    top: -9px;
+    right: -9px;
+
+    width: 17px;
+    height: 17px;
+
+    background: #dc2626;
+    color: white;
+
+    border-radius: 50%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-profile > i:first-child {
+    font-size: 34px;
+    color: #94a3b8;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.25;
+}
+
+.user-info strong {
+    font-size: 14px;
+}
+
+.user-info small {
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.user-profile > i:last-child {
+    font-size: 11px;
+    margin-left: 6px;
+    color: #475569;
+}
+
+/* Page Heading */
+
+.page-heading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+
+    padding: 27px 24px 20px;
+}
+
+.heading-left {
+    min-width: 0;
+}
+
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+
+    margin-bottom: 17px;
+
+    font-size: 13px;
+}
+
+.breadcrumb a {
+    text-decoration: none;
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.breadcrumb i {
+    font-size: 9px;
+    color: #94a3b8;
+}
+
+.breadcrumb span {
+    color: var(--muted);
+}
+
+.page-heading h1 {
+    font-size: 28px;
+    margin-bottom: 5px;
+}
+
+.page-heading p {
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.add-technician-btn {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+
+    background: var(--primary);
+    color: white;
+
+    text-decoration: none;
+
+    padding: 11px 18px;
+    border-radius: 7px;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    transition: .2s;
+}
+
+.add-technician-btn:hover {
+    background: var(--primary-dark);
+}
+
+/* Statistics */
+.technician-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+
+    padding: 0 24px 22px;
+}
+
+.tech-stat-card {
+    background: var(--surface);
+    border: 1px solid #edf0f4;
+    border-radius: 9px;
+
+    padding: 18px;
+
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
+    box-shadow: var(--shadow);
+}
+
+.tech-stat-icon {
+    width: 54px;
+    height: 54px;
+
+    border-radius: 50%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 21px;
+
+    flex-shrink: 0;
+}
+
+.tech-stat-icon.blue {
+    background: #e8f1ff;
+    color: #1769e8;
+}
+
+.tech-stat-icon.green {
+    background: #e5f7eb;
+    color: #16a34a;
+}
+
+.tech-stat-icon.orange {
+    background: #fff2d9;
+    color: #f59e0b;
+}
+
+.tech-stat-icon.purple {
+    background: #f2e8ff;
+    color: #9333ea;
+}
+
+.tech-stat-content p {
+    color: #475569;
+    font-size: 13px;
+    margin-bottom: 4px;
+}
+
+.tech-stat-content h2 {
+    font-size: 27px;
+    line-height: 1.1;
+    margin-bottom: 7px;
+}
+
+.stat-note {
+    font-size: 11px;
+}
+
+.stat-note i {
+    font-size: 6px;
+    vertical-align: middle;
+    margin-right: 5px;
+}
+
+.blue-text {
+    color: #1769e8;
+}
+
+.green-text {
+    color: #16a34a;
+}
+
+.orange-text {
+    color: #d97706;
+}
+
+.purple-text {
+    color: #9333ea;
+}
+
+/* Main Technician Layout */
+
+.technician-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 2.5fr) minmax(280px, .9fr);
+
+    gap: 22px;
+
+    padding: 0 24px 25px;
+}
+
+.card-panel,
+.side-card {
+    background: var(--surface);
+    border: 1px solid #edf0f4;
+    border-radius: 9px;
+    box-shadow: var(--shadow);
+}
+
+/* Technician-List */
+
+.technician-list {
+    min-width: 0;
+    overflow: hidden;
+}
+
+.list-header {
+    min-height: 67px;
+
+    padding: 0 20px;
+
+    border-bottom: 1px solid var(--border);
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+}
+
+.list-header h2,
+.side-card h2 {
+    font-size: 15px;
+}
+
+.list-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.list-controls select {
+    height: 37px;
+    min-width: 135px;
+
+    border: 1px solid #d5dce6;
+    border-radius: 6px;
+
+    padding: 0 12px;
+
+    background: white;
+    color: #334155;
+
+    outline: none;
+}
+
+.technician-search {
+    width: 225px;
+    height: 37px;
+
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    border: 1px solid #d5dce6;
+    border-radius: 6px;
+
+    padding: 0 11px;
+
+    color: #64748b;
+}
+
+.technician-search input {
+    border: none;
+    outline: none;
+
+    width: 100%;
+
+    font-size: 13px;
+}
+
+/* Table */
+
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.technician-table {
+    width: 100%;
+    min-width: 850px;
+    border-collapse: collapse;
+}
+
+.technician-table th {
+    height: 49px;
+
+    background: #fafbfc;
+
+    color: #475569;
+
+    font-size: 12px;
+    font-weight: 600;
+
+    text-align: left;
+
+    padding: 0 14px;
+
+    border-bottom: 1px solid var(--border);
+}
+
+.technician-table td {
+    height: 59px;
+
+    padding: 0 14px;
+
+    font-size: 12px;
+
+    border-bottom: 1px solid #edf0f4;
+
+    color: #334155;
+}
+
+.technician-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+/* Technician Name */
+
+.technician-name {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.technician-name strong {
+    color: #1e293b;
+    font-size: 12px;
+}
+
+.avatar,
+.performer-avatar {
+    width: 34px;
+    height: 34px;
+
+    border-radius: 50%;
+
+    background: #dbeafe;
+    color: #1d4ed8;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 10px;
+    font-weight: 700;
+
+    flex-shrink: 0;
+}
+
+/* Status Badges */
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+
+    padding: 5px 10px;
+
+    border-radius: 999px;
+
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.status-badge.active {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.status-badge.on-leave {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.status-badge.inactive {
+    background: #e2e8f0;
+    color: #475569;
+}
+
+.status-badge.available {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.status-badge.busy {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+/* Action Button */
+
+.action-btn {
+    border: none;
+    background: transparent;
+
+    color: #64748b;
+
+    cursor: pointer;
+
+    font-size: 15px;
+}
+
+.action-btn:hover {
+    color: var(--primary);
+}
+
+/* Table Footer / Pagination */
+
+.table-footer {
+    min-height: 60px;
+
+    padding: 0 18px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    color: var(--muted);
+
+    font-size: 12px;
+}
+
+.pagination {
+    display: flex;
+    gap: 6px;
+}
+
+.pagination button {
+    width: 31px;
+    height: 31px;
+
+    border: 1px solid #d5dce6;
+    border-radius: 6px;
+
+    background: white;
+
+    cursor: pointer;
+
+    color: #475569;
+}
+
+.pagination button:hover,
+.pagination button.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+
+.pagination button i {
+    font-size: 9px;
+}
+
+/* Right Sidebar */
+
+.technician-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.side-card {
+    padding: 19px;
+}
+
+.side-card h2 {
+    margin-bottom: 20px;
+}
+
+/* Quick Actions */
+
+.quick-action {
+    display: flex;
+    align-items: center;
+
+    gap: 12px;
+
+    text-decoration: none;
+    color: var(--text);
+
+    padding: 10px 0;
+
+    border-bottom: 1px solid #edf0f4;
+}
+
+.quick-action:last-child {
+    border-bottom: none;
+}
+
+.quick-icon {
+    width: 39px;
+    height: 39px;
+
+    border-radius: 50%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+}
+
+.quick-icon.blue {
+    background: #e8f1ff;
+    color: #1769e8;
+}
+
+.quick-icon.red {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.quick-icon.green {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.quick-icon.purple {
+    background: #f3e8ff;
+    color: #9333ea;
+}
+
+.quick-text {
+    flex: 1;
+
+    display: flex;
+    flex-direction: column;
+}
+
+.quick-text strong {
+    font-size: 12px;
+    margin-bottom: 2px;
+}
+
+.quick-text span {
+    color: var(--muted);
+    font-size: 10px;
+}
+
+.quick-action > i:last-child {
+    color: #94a3b8;
+    font-size: 10px;
+}
+
+/* Skills Overview */
+
+.skills-overview {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.skills-circle {
+    width: 115px;
+    height: 115px;
+
+    border-radius: 50%;
+
+    background:
+        conic-gradient(
+            #1769e8 0 33%,
+            #16a34a 33% 50%,
+            #f59e0b 50% 67%,
+            #ef4444 67% 84%,
+            #94a3b8 84% 100%
+        );
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+}
+
+.circle-inner {
+    width: 78px;
+    height: 78px;
+
+    background: white;
+
+    border-radius: 50%;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+}
+
+.circle-inner strong {
+    font-size: 20px;
+}
+
+.circle-inner span {
+    color: var(--muted);
+    font-size: 9px;
+}
+
+.skills-list {
+    flex: 1;
+}
+
+.skill-row {
+    display: grid;
+    grid-template-columns: 10px 1fr auto;
+
+    align-items: center;
+
+    gap: 7px;
+
+    margin-bottom: 11px;
+
+    font-size: 10px;
+}
+
+.skill-row strong {
+    color: #475569;
+    font-weight: 500;
+}
+
+.skill-dot {
+    width: 8px;
+    height: 8px;
+
+    border-radius: 50%;
+}
+
+.skill-dot.engine {
+    background: #1769e8;
+}
+
+.skill-dot.transmission {
+    background: #16a34a;
+}
+
+.skill-dot.electrical {
+    background: #f59e0b;
+}
+
+.skill-dot.brakes {
+    background: #ef4444;
+}
+
+.skill-dot.ac {
+    background: #94a3b8;
+}
+
+/* Top Performers */
+
+.performer {
+    display: flex;
+    align-items: center;
+
+    gap: 9px;
+
+    padding: 11px 0;
+
+    border-bottom: 1px solid #edf0f4;
+}
+
+.performer:last-child {
+    border-bottom: none;
+}
+
+.performer-number {
+    width: 16px;
+
+    font-size: 12px;
+    color: #475569;
+}
+
+.performer-avatar {
+    width: 35px;
+    height: 35px;
+}
+
+.performer-info {
+    flex: 1;
+
+    display: flex;
+    flex-direction: column;
+}
+
+.performer-info strong {
+    font-size: 11px;
+}
+
+.performer-info span {
+    font-size: 9px;
+    color: var(--muted);
+}
+
+.performer-score {
+    color: var(--primary);
+    font-size: 15px;
+    font-weight: 700;
+}
+
+/* Footer */
+
+.page-footer {
+    background: linear-gradient(135deg, #1E3A5F 0%, #1769e8 100%);
+    border-top: 1px solid rgba(255, 255, 255, 0.22);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 -8px 24px rgba(15, 23, 42, 0.12);
+    color: #f8fbff;
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+}
+
+.page-footer span:last-child {
+    color: rgba(248, 251, 255, 0.86);
+}
+
+/* Responsive */
+
+@media (max-width: 1200px) {
+
+    .technician-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .technician-sidebar {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .header-search {
+        width: 400px;
+    }
+}
+
+@media (max-width: 1000px) {
+
+    .technician-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .header-search {
+        width: 300px;
+    }
+}
+
+@media (max-width: 768px) {
+
+    .top-header {
+        padding: 0 15px;
+    }
+
+    .header-search {
+        width: 100%;
+    }
+
+    .user-info,
+    .user-profile > i:last-child {
+        display: none;
+    }
+
+    .page-heading {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 18px;
+    }
+
+    .technician-stats {
+        grid-template-columns: 1fr;
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+
+    .technician-layout {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+
+    .list-header {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 16px;
+    }
+
+    .list-controls {
+        width: 100%;
+    }
+
+    .technician-search {
+        flex: 1;
+    }
+
+    .technician-sidebar {
+        grid-template-columns: 1fr;
+    }
+
+    .table-footer {
+        flex-direction: column;
+        gap: 12px;
+        padding: 15px;
+    }
+
+    .page-footer {
+        flex-direction: column;
+        gap: 8px;
+        text-align: center;
+    }
+}
+
+@media (max-width: 500px) {
+
+    .top-header {
+        height: 62px;
+    }
+
+    .header-right {
+        gap: 10px;
+    }
+
+    .header-search {
+        height: 36px;
+    }
+
+    .page-heading {
+        padding: 20px 15px;
+    }
+
+    .page-heading h1 {
+        font-size: 24px;
+    }
+
+    .add-technician-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .list-controls {
+        flex-direction: column;
+    }
+
+    .list-controls select,
+    .technician-search {
+        width: 100%;
+    }
+}

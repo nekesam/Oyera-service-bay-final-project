@@ -1,0 +1,266 @@
+extends layout
+
+block headStyles
+  link(rel='stylesheet' href='/css/reports.css')
+
+block content
+  .main-container
+    - const activePage = 'reports'
+    include partials/sidebar
+
+    main.content
+      .reports-page
+        .page-heading
+          .heading-left
+            .breadcrumb
+              a(href='/dashboard') Dashboard
+              i.fas.fa-chevron-right
+              span Reports
+            h1 Reports Dashboard
+            p Service bay performance insights based on customers, vehicles, services, technicians and stock records.
+
+        section.report-filters.card-panel
+          form.filter-form(action='/reports' method='GET')
+            .filter-grid
+              .filter-item
+                label(for='datePreset') Date Range
+                select#datePreset(name='datePreset')
+                  option(value='today' selected=filters.datePreset === 'today') Today
+                  option(value='week' selected=filters.datePreset === 'week') This Week
+                  option(value='month' selected=filters.datePreset === 'month') This Month
+                  option(value='custom' selected=filters.datePreset === 'custom') Custom Date Range
+
+              .filter-item
+                label(for='serviceType') Service Type
+                select#serviceType(name='serviceType')
+                  option(value='all' selected=filters.serviceType === 'all') All Services
+                  each optionValue in options.serviceTypeOptions
+                    option(value=optionValue selected=filters.serviceType === optionValue)= optionValue
+
+              .filter-item
+                label(for='vehicleType') Vehicle Type
+                select#vehicleType(name='vehicleType')
+                  option(value='all' selected=filters.vehicleType === 'all') All Vehicle Types
+                  each typeOption in options.vehicleTypeOptions
+                    option(value=typeOption.value selected=filters.vehicleType === typeOption.value)= typeOption.label
+
+              .filter-item
+                label(for='technicianId') Technician
+                select#technicianId(name='technicianId')
+                  option(value='all' selected=filters.technicianId === 'all') All Technicians
+                  each tech in options.technicianOptions
+                    option(value=tech._id selected=filters.technicianId === String(tech._id))= tech.fullName
+
+              .filter-item
+                label(for='customStartDate') Start Date
+                input#customStartDate(type='date' name='customStartDate' value=filters.customStartDate)
+
+              .filter-item
+                label(for='customEndDate') End Date
+                input#customEndDate(type='date' name='customEndDate' value=filters.customEndDate)
+
+            .filter-actions
+              button.btn-primary(type='submit')
+                i.fas.fa-filter
+                | Apply Filters
+              a.btn-secondary(href='/reports') Reset
+
+        section.summary-grid
+          article.summary-card
+            .summary-icon.blue
+              i.fas.fa-clipboard-list
+            .summary-body
+              p Total Services
+              h2= totalServices
+
+          article.summary-card
+            .summary-icon.green
+              i.fas.fa-car
+            .summary-body
+              p Vehicles Serviced
+              h2= totalVehicles
+
+          article.summary-card
+            .summary-icon.orange
+              i.fas.fa-users
+            .summary-body
+              p Total Customers
+              h2= totalCustomers
+
+          article.summary-card
+            .summary-icon.purple
+              i.fas.fa-coins
+            .summary-body
+              p Total Revenue
+              h2 UGX #{Number(totalRevenue || 0).toLocaleString()}
+
+          article.summary-card
+            .summary-icon.teal
+              i.fas.fa-box-open
+            .summary-body
+              p Parts Used
+              h2= Number(partsUsed || 0).toLocaleString()
+
+        .reports-layout
+          .reports-main
+            section.card-panel.report-section
+              .section-header
+                h2 Service Report
+              .table-wrapper
+                table.report-table
+                  thead
+                    tr
+                      th Date
+                      th Customer
+                      th Vehicle
+                      th Service Performed
+                      th Technician
+                      th Parts Used
+                      th Amount (UGX)
+                  tbody
+                    if serviceReports.length
+                      each item in serviceReports
+                        tr
+                          td= item.date ? new Date(item.date).toLocaleDateString() : '-'
+                          td= item.customer
+                          td= item.vehicle
+                          td= item.services
+                          td= item.technician
+                          td= item.partsUsed
+                          td= Number(item.amount || 0).toLocaleString()
+                    else
+                      tr
+                        td(colspan='7') No service records for selected filters.
+
+            section.card-panel.report-section
+              .section-header
+                h2 Vehicle Report
+              .table-wrapper
+                table.report-table
+                  thead
+                    tr
+                      th Registration Number
+                      th Vehicle Type
+                      th Owner
+                      th Number of Services
+                      th Last Service Date
+                  tbody
+                    if vehicleReports.length
+                      each item in vehicleReports
+                        tr
+                          td= item.registrationNo
+                          td
+                            span.badge.vehicle-type(class=item.vehicleType)= item.vehicleType
+                          td= item.ownerName
+                          td= item.servicesCount
+                          td= item.lastServiceDate ? new Date(item.lastServiceDate).toLocaleDateString() : '-'
+                    else
+                      tr
+                        td(colspan='5') No vehicle report data for selected filters.
+
+            section.card-panel.report-section
+              .section-header
+                h2 Technician Report
+              .table-wrapper
+                table.report-table
+                  thead
+                    tr
+                      th Technician
+                      th Jobs Handled
+                      th Services Completed
+                      th Total Service Value (UGX)
+                  tbody
+                    if technicianReports.length
+                      each item in technicianReports
+                        tr
+                          td= item.technicianName
+                          td= item.jobsHandled
+                          td= item.servicesCompleted
+                          td= Number(item.totalServiceValue || 0).toLocaleString()
+                    else
+                      tr
+                        td(colspan='4') No technician report data for selected filters.
+
+            section.card-panel.report-section
+              .section-header
+                h2 Inventory / Stock Report
+              .table-wrapper
+                table.report-table
+                  thead
+                    tr
+                      th Part / Item
+                      th Quantity Used
+                      th Current Quantity
+                      th Stock Status
+                  tbody
+                    if inventoryReports.length
+                      each item in inventoryReports
+                        tr
+                          td= item.itemName
+                          td= Number(item.quantityUsed || 0).toLocaleString()
+                          td #{Number(item.currentQuantity || 0).toLocaleString()} #{item.unit || ''}
+                          td
+                            span.badge.stock-status(class=item.stockStatus.replace(/\s+/g, '-').toLowerCase())= item.stockStatus
+                    else
+                      tr
+                        td(colspan='4') No inventory data available.
+
+          aside.reports-side
+            section.card-panel.side-section
+              .section-header
+                h2 Service Performance
+              .table-wrapper
+                table.report-table.compact
+                  thead
+                    tr
+                      th Service
+                      th Requests
+                  tbody
+                    if popularServices.length
+                      each item in popularServices
+                        tr
+                          td= item.serviceName
+                          td= item.count
+                    else
+                      tr
+                        td(colspan='2') No performance data for selected filters.
+
+            section.card-panel.side-section
+              .section-header
+                h2 Revenue Summary
+              .revenue-list
+                .revenue-row
+                  span Total Revenue
+                  strong UGX #{Number(revenueSummary.totalRevenue || 0).toLocaleString()}
+
+                .revenue-row
+                  span Revenue From Services
+                  strong UGX #{Number(revenueSummary.serviceRevenue || 0).toLocaleString()}
+
+                .revenue-row
+                  span Revenue From Parts
+                  strong UGX #{Number(revenueSummary.partsRevenue || 0).toLocaleString()}
+
+                .revenue-row
+                  span Labour Charges
+                  strong UGX #{Number(revenueSummary.labourCharges || 0).toLocaleString()}
+
+block pageScripts
+  script.
+    (function () {
+      const datePreset = document.getElementById('datePreset');
+      const startInput = document.getElementById('customStartDate');
+      const endInput = document.getElementById('customEndDate');
+
+      function toggleCustomDates() {
+        const isCustom = datePreset && datePreset.value === 'custom';
+        if (!startInput || !endInput) return;
+        startInput.disabled = !isCustom;
+        endInput.disabled = !isCustom;
+      }
+
+      if (datePreset) {
+        datePreset.addEventListener('change', toggleCustomDates);
+        toggleCustomDates();
+      }
+    })();

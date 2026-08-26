@@ -1,0 +1,60 @@
+extends layout
+
+block headStyles
+  link(rel='stylesheet' href='/css/vehicles.css')
+
+block content
+  .main-container
+    - const activePage = 'customers'
+    include partials/sidebar
+    main.content
+      .register-vehicle-page
+        .page-heading
+          .heading-left
+            .breadcrumb
+              a(href='/dashboard') Dashboard
+              i.fas.fa-chevron-right
+              a(href='/customers/records') Customers
+              i.fas.fa-chevron-right
+              span Register Customer
+            h1 Register Customer
+            p Add a new customer profile and contact details.
+
+        .register-card
+          if errorMessage
+            .form-alert= errorMessage
+
+          form.register-form(action='/customers/register' method='POST' novalidate='')
+            .form-grid
+              .form-field
+                label(for='customer-id') Customer ID
+                input#customer-id(type='text' name='customerId' placeholder='Optional customer ID (auto can be used)' value=formData && formData.customerId ? formData.customerId : '')
+
+              .form-field
+                label(for='first-name') First Name
+                input#first-name(type='text' name='firstName' required='' value=formData && formData.firstName ? formData.firstName : '')
+
+              .form-field
+                label(for='last-name') Last Name
+                input#last-name(type='text' name='lastName' required='' value=formData && formData.lastName ? formData.lastName : '')
+
+              .form-field
+                label(for='phone') Phone Number
+                input#phone(type='tel' name='phone' required='' value=formData && formData.phone ? formData.phone : '')
+
+              .form-field
+                label(for='email') Email Address
+                input#email(type='email' name='email' value=formData && formData.email ? formData.email : '')
+
+              .form-field
+                label(for='address') Physical Address
+                input#address(type='text' name='address' value=formData && formData.address ? formData.address : '')
+
+            .form-actions
+              a.btn-secondary(href='/customers/records') Cancel
+              button.btn-primary(type='submit') Save Customer
+
+block pageScripts
+  script(src='/js/validation.js')
+  script(src='/js/store.js')
+  script(src='/js/customers.js')

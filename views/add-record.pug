@@ -1,0 +1,154 @@
+extends layout
+
+block headStyles
+  link(rel='stylesheet' href='/css/vehicles.css')
+
+block content
+  .main-container
+    - const activePage = 'services'
+    include partials/sidebar
+    main.content
+      .register-vehicle-page
+        .page-heading
+          .heading-left
+            .breadcrumb
+              a(href='/dashboard') Dashboard
+              i.fas.fa-chevron-right
+              a(href='/service-records') Services
+              i.fas.fa-chevron-right
+              span Add Service
+            h1 Add Service
+            p Log a new service record and deduct stock used for the job.
+
+        .register-card
+          if errorMessage
+            .form-alert= errorMessage
+
+          .form-alert
+            strong Pricing Guide:
+            |  Engine Oil (UGX 79K-200K), Brake Fluid (UGX 13K-20K), Oil Filter (UGX 15K-20K), Alignment (UGX 30K), Balance (UGX 20K), Standard Labor (UGX 20K).
+
+          form.register-form(action='/addRecord' method='POST')
+            .form-grid
+              .form-field
+                label(for='customerName') Customer Name
+                input#customerName(type='text' name='customerName' required value=formData && formData.customerName ? formData.customerName : '')
+
+              .form-field
+                label(for='carPlate') Car Number Plate
+                input#carPlate(type='text' name='carPlate' required value=formData && formData.carPlate ? formData.carPlate : '')
+
+              .form-field
+                label(for='servicesDone') Services Performed (Hold Ctrl/Cmd to select multiple)
+                select#servicesDone(name='servicesDone' multiple required size='5')
+                  option(value='Engine Oil and Filters' selected=formData && formData.servicesDone && formData.servicesDone.includes('Engine Oil and Filters')) Engine Oil and Filters
+                  option(value='Gear Box Oil and Filters' selected=formData && formData.servicesDone && formData.servicesDone.includes('Gear Box Oil and Filters')) Gear Box Oil and Filters
+                  option(value='Brake Fluids' selected=formData && formData.servicesDone && formData.servicesDone.includes('Brake Fluids')) Brake Fluids
+                  option(value='Brake Pads Change' selected=formData && formData.servicesDone && formData.servicesDone.includes('Brake Pads Change')) Brake Pads Change
+                  option(value='Greasing' selected=formData && formData.servicesDone && formData.servicesDone.includes('Greasing')) Greasing
+                  option(value='Other Minor Repairs' selected=formData && formData.servicesDone && formData.servicesDone.includes('Other Minor Repairs')) Other Minor Repairs
+                  option(value='Wheel Alignment' selected=formData && formData.servicesDone && formData.servicesDone.includes('Wheel Alignment')) Wheel Alignment
+                  option(value='Wheel Balance' selected=formData && formData.servicesDone && formData.servicesDone.includes('Wheel Balance')) Wheel Balance
+
+              .form-field
+                label(for='technicians') Assigned Technician(s) (Hold Ctrl/Cmd to select multiple)
+                select#technicians(name='technicians' multiple required size='5')
+                  each tech in technicians
+                    option(value=tech._id selected=formData && formData.technicians && formData.technicians.includes(String(tech._id)))= tech.fullName
+
+              .form-field
+                label Parts & Oils Used
+                #parts-container
+
+                button.btn-secondary(type='button' onclick='addPartRow()') Add Part/Oil
+
+              .form-field
+                label(for='totalCostDisplay') Total Cost (UGX, Auto Calculated)
+                input#totalCostDisplay(type='number' readonly value='20000')
+
+            .form-actions
+              a.btn-secondary(href='/service-records') Cancel
+              button.btn-primary(type='submit') Save Record & Deduct Stock
+
+  //- HIDDEN TEMPLATE FOR DYNAMIC ROWS
+  template#part-row-template
+    .part-row(style='display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) auto;gap:10px;margin-top:10px;')
+      div
+        select(name='partIds' required style='height:44px;border:1px solid #cbd5e1;border-radius:8px;padding:0 12px;width:100%;')
+          option(value="", disabled, selected) Select Item...
+          each items, categoryName in stockByCategory
+            optgroup(label=categoryName)
+              each item in items
+                option(value=item._id data-price=(item.unitPrice || 0)) #{item.itemName} (In Stock: #{item.quantity})
+      div
+        input(type='number' name='partQuantities' min='1' value='1' placeholder='Qty' required style='height:44px;border:1px solid #cbd5e1;border-radius:8px;padding:0 12px;width:100%;')
+      div
+        button.btn-secondary(type='button' style='height:44px;' onclick="this.closest('.part-row').remove()") Remove
+
+block pageScripts
+  //- CLIENT-SIDE LOGIC
+  script.
+    const LABOUR_CHARGE = 20000;
+    const SERVICE_PRICES = {
+      'Wheel Alignment': 30000,
+      'Wheel Balance': 20000
+    };
+
+    function recalculateTotal() {
+      const servicesSelect = document.getElementById('servicesDone');
+      const totalCostDisplay = document.getElementById('totalCostDisplay');
+      const partRows = document.querySelectorAll('#parts-container .part-row');
+
+      let servicesCost = 0;
+      if (servicesSelect) {
+        const selectedServices = Array.from(servicesSelect.selectedOptions).map((opt) => opt.value);
+        servicesCost = selectedServices.reduce((sum, serviceName) => sum + (SERVICE_PRICES[serviceName] || 0), 0);
+      }
+
+      let partsCost = 0;
+      partRows.forEach((row) => {
+        const partSelect = row.querySelector('select[name="partIds"]');
+        const qtyInput = row.querySelector('input[name="partQuantities"]');
+        if (!partSelect || !qtyInput) return;
+
+        const selectedOption = partSelect.options[partSelect.selectedIndex];
+        const unitPrice = Number(selectedOption?.dataset?.price || 0);
+        const qty = Number(qtyInput.value || 0);
+        if (qty > 0) {
+          partsCost += unitPrice * qty;
+        }
+      });
+
+      totalCostDisplay.value = LABOUR_CHARGE + servicesCost + partsCost;
+    }
+
+    function addPartRow() {
+      const container = document.getElementById('parts-container');
+      const template = document.getElementById('part-row-template');
+      const clone = template.content.cloneNode(true);
+      container.appendChild(clone);
+      recalculateTotal();
+    }
+
+    document.addEventListener('change', (event) => {
+      if (event.target.matches('#servicesDone, select[name="partIds"]')) {
+        recalculateTotal();
+      }
+    });
+
+    document.addEventListener('input', (event) => {
+      if (event.target.matches('input[name="partQuantities"]')) {
+        recalculateTotal();
+      }
+    });
+
+    document.addEventListener('click', (event) => {
+      if (event.target.closest('button[onclick*="remove"]')) {
+        requestAnimationFrame(recalculateTotal);
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      addPartRow();
+      recalculateTotal();
+    });

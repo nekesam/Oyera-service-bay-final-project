@@ -1,0 +1,176 @@
+extends layout
+
+block headStyles
+  link(rel='stylesheet' href='/css/serviceRecords.css')
+
+block content
+  .main-container
+    - const activePage = 'services'
+    include partials/sidebar
+    main.content
+      .services-page
+        - const totalRecords = records.length
+        - const todayDate = new Date().toDateString()
+        - const servicedToday = records.filter((record) => new Date(record.date).toDateString() === todayDate).length
+        - const uniqueCustomers = new Set(records.map((record) => (record.customerName || '').trim()).filter(Boolean)).size
+        - const totalRevenue = records.reduce((sum, record) => sum + (Number(record.totalCost) || 0), 0)
+        - const averageTicket = totalRecords ? Math.round(totalRevenue / totalRecords) : 0
+
+        .page-heading
+          .heading-left
+            .breadcrumb
+              a(href='/dashboard') Dashboard
+              i.fas.fa-chevron-right
+              span Services
+            h1 Services
+            p Track captured services, technicians and customer jobs.
+
+          a.add-service-btn(href='/addRecord')
+            i.fas.fa-plus
+            | Add Service
+
+        section.service-stats
+          article.service-stat-card
+            .service-stat-icon.blue
+              i.fas.fa-clipboard-list
+            .service-stat-content
+              p Total Records
+              h2= totalRecords
+              span.stat-note.blue-text
+                i.fas.fa-circle
+                | Captured services
+
+          article.service-stat-card
+            .service-stat-icon.green
+              i.fas.fa-calendar-day
+            .service-stat-content
+              p Serviced Today
+              h2= servicedToday
+              span.stat-note.green-text
+                i.fas.fa-circle
+                | Today
+
+          article.service-stat-card
+            .service-stat-icon.orange
+              i.fas.fa-users
+            .service-stat-content
+              p Unique Customers
+              h2= uniqueCustomers
+              span.stat-note.orange-text
+                i.fas.fa-circle
+                | Served customers
+
+          article.service-stat-card
+            .service-stat-icon.purple
+              i.fas.fa-coins
+            .service-stat-content
+              p Total Revenue
+              h2= totalRevenue.toLocaleString()
+              span.stat-note.purple-text
+                i.fas.fa-circle
+                | UGX captured
+
+        .service-layout
+          section.service-list.card-panel
+            .list-header
+              h2 Service Records
+              .list-controls
+                .service-search
+                  i.fas.fa-search
+                  input(type='text' placeholder='Search service...')
+
+            .table-wrapper
+              table.service-table
+                thead
+                  tr
+                    th #
+                    th Date
+                    th Customer
+                    th Plate No.
+                    th Services
+                    th Technicians
+                    th Total Cost
+                    th Actions
+
+                tbody
+                  if records.length
+                    each record, index in records
+                      tr
+                        td= index + 1
+                        td= new Date(record.date).toLocaleDateString()
+                        td= record.customerName
+                        td
+                          span.status-badge.plate-badge= record.carPlate || record.carplate
+                        td= (record.servicesDone || []).join(', ')
+                        td= (record.technicians || []).filter(Boolean).map((technician) => technician.fullName || 'Unknown Technician').join(', ')
+                        td= (Number(record.totalCost) || 0).toLocaleString()
+                        td
+                          .table-actions
+                            a.action-link.edit(href=`/records/edit/${record._id}`) Edit
+                            form.action-form(action=`/records/delete/${record._id}` method='POST' onsubmit="return confirm('Delete this service record?');")
+                              button.action-btn.delete(type='submit') Delete
+                  else
+                    tr
+                      td(colspan='8') No service records yet.
+
+            .table-footer
+              span Showing 1 to #{records.length} of #{totalRecords} service records
+
+          aside.service-sidebar
+            section.side-card
+              h2 Quick Actions
+
+              a.quick-action(href='/addRecord')
+                .quick-icon.blue
+                  i.fas.fa-plus
+                .quick-text
+                  strong Capture Service
+                  span Add a new service record
+                i.fas.fa-chevron-right
+
+              a.quick-action(href='/registerStock/inventory')
+                .quick-icon.green
+                  i.fas.fa-boxes-stacked
+                .quick-text
+                  strong Register Stock
+                  span Add inventory item
+                i.fas.fa-chevron-right
+
+              a.quick-action(href='/technicians')
+                .quick-icon.orange
+                  i.fas.fa-user-gear
+                .quick-text
+                  strong View Technicians
+                  span Check team assignments
+                i.fas.fa-chevron-right
+
+              a.quick-action(href='/dashboard')
+                .quick-icon.purple
+                  i.fas.fa-chart-column
+                .quick-text
+                  strong Service Overview
+                  span View dashboard insights
+                i.fas.fa-chevron-right
+
+            section.side-card
+              h2 Service Summary
+              .summary-list
+                .summary-row
+                  span Average Ticket
+                  strong= averageTicket.toLocaleString()
+
+                .summary-row
+                  span Total Revenue
+                  strong= totalRevenue.toLocaleString()
+
+                .summary-row
+                  span Captured Records
+                  strong= totalRecords
+
+                .summary-row
+                  span Customers Served
+                  strong= uniqueCustomers
+
+        footer.page-footer
+          span © 2026 Oyera Auto Service Bay Ltd. All rights reserved.
+          span Professional care for every ride.

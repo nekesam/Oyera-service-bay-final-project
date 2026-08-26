@@ -1,0 +1,57 @@
+extends layout
+
+block content
+	.container.mt-5
+		.row
+			.col-md-6.col-lg-5
+				.card.p-4.shadow-sm
+					h4.mb-3.fw-bold Register Stock
+					if errorMessage
+						.alert.alert-danger.mb-3= errorMessage
+					form(action='/registerStock/addStock' method='POST')
+						.mb-3
+							label.form-label Item Name
+							select.form-select#itemNameSelect(name='itemName' required)
+								option(value='' disabled selected) Select an item...
+								optgroup(label='Engine Oils')
+									option(value='Engine Oil - 5W-30 (Synthetic)' data-category='Engine Oil' selected=formData.itemName === 'Engine Oil - 5W-30 (Synthetic)') Engine Oil - 5W-30 (Synthetic)
+									option(value='Engine Oil - 5W-40 (Synthetic)' data-category='Engine Oil' selected=formData.itemName === 'Engine Oil - 5W-40 (Synthetic)') Engine Oil - 5W-40 (Synthetic)
+									option(value='Engine Oil - 10W-40 (Semi-Synthetic)' data-category='Engine Oil' selected=formData.itemName === 'Engine Oil - 10W-40 (Semi-Synthetic)') Engine Oil - 10W-40 (Semi-Synthetic)
+									option(value='Engine Oil - 15W-40 (Mineral)' data-category='Engine Oil' selected=formData.itemName === 'Engine Oil - 15W-40 (Mineral)') Engine Oil - 15W-40 (Mineral)
+								optgroup(label='Gearbox Oils')
+									option(value='Gearbox Oil - ATF Fluid' data-category='Gearbox Oil' selected=formData.itemName === 'Gearbox Oil - ATF Fluid') Gearbox Oil - ATF Fluid
+									option(value='Gearbox Oil - CVT Fluid' data-category='Gearbox Oil' selected=formData.itemName === 'Gearbox Oil - CVT Fluid') Gearbox Oil - CVT Fluid
+									option(value='Gearbox Oil - 75W-90' data-category='Gearbox Oil' selected=formData.itemName === 'Gearbox Oil - 75W-90') Gearbox Oil - 75W-90
+								optgroup(label='Filters')
+									option(value='Oil Filter' data-category='Filters' selected=formData.itemName === 'Oil Filter') Oil Filter
+									option(value='Air Filter' data-category='Filters' selected=formData.itemName === 'Air Filter') Air Filter
+									option(value='Fuel Filter' data-category='Filters' selected=formData.itemName === 'Fuel Filter') Fuel Filter
+									option(value='Gearbox Filter' data-category='Filters' selected=formData.itemName === 'Gearbox Filter') Gearbox Filter
+								optgroup(label='Brake Fluids')
+									option(value='Brake Fluid - DOT 3' data-category='Brake Fluid' selected=formData.itemName === 'Brake Fluid - DOT 3') Brake Fluid - DOT 3
+									option(value='Brake Fluid - DOT 4' data-category='Brake Fluid' selected=formData.itemName === 'Brake Fluid - DOT 4') Brake Fluid - DOT 4
+								optgroup(label='Other Parts & Maintenance')
+									option(value='Front Brake Pads' data-category='Other' selected=formData.itemName === 'Front Brake Pads') Front Brake Pads
+									option(value='Rear Brake Pads' data-category='Other' selected=formData.itemName === 'Rear Brake Pads') Rear Brake Pads
+									option(value='Wheel Bearing Grease' data-category='Other' selected=formData.itemName === 'Wheel Bearing Grease') Wheel Bearing Grease
+									option(value='All-Purpose Grease' data-category='Other' selected=formData.itemName === 'All-Purpose Grease') All-Purpose Grease
+
+						.mb-3
+							label.form-label Category
+							select.form-select#categorySelect(name='category' required)
+								option(value='' disabled selected=!formData.category) Select a category...
+								option(value='Filters' selected=formData.category === 'Filters') Filters
+								option(value='Engine Oil' selected=formData.category === 'Engine Oil') Engine Oil
+								option(value='Gearbox Oil' selected=formData.category === 'Gearbox Oil') Gearbox Oil
+								option(value='Brake Fluid' selected=formData.category === 'Brake Fluid') Brake Fluid
+								option(value='Other' selected=formData.category === 'Other') Other
+
+						.mb-3
+							label.form-label Price (UGX)
+							input.form-control(type='number' min='0' name='price' placeholder='e.g., 85000' required value=formData.price)
+
+						.mb-3
+							label.form-label Quantity Received
+							input.form-control(type='number' min='0' name='quantity' placeholder='e.g., 10' required value=formData.quantity)
+
+						button.btn.btn-warning.w-100.fw-bold(type='submit') Add to Stock

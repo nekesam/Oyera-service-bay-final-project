@@ -1,0 +1,35 @@
+extends layout
+
+block headStyles
+  link(rel='stylesheet' href='/css/userRecords.css')
+
+block content
+  .main-container
+    - const activePage = 'technicians'
+    include partials/sidebar
+    main.content
+      .user-records-page
+        header.page-header
+          h1 Edit User
+          p Update user profile details.
+
+        section.records-card
+          .records-header
+            h2 User Information
+
+          form.row.g-3(method='post' action=`/registerUser/user/edit/${user._id}`)
+            .col-md-6
+              label.form-label(for='fullName') Full Name
+              input#fullName.form-control(type='text' name='fullName' value=user.fullName required)
+
+            .col-md-6
+              label.form-label(for='email') Email
+              input#email.form-control(type='email' name='email' value=user.email || '')
+
+            .col-md-6
+              label.form-label(for='phone') Phone Number
+              input#phone.form-control(type='text' name='phone' value=user.phone || '')
+
+            .col-12.d-flex.gap-2
+              button.btn.btn-primary(type='submit') Save Changes
+              a.btn.btn-outline-secondary(href='/registerUser/userRecords') Cancel

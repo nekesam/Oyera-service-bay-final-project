@@ -1,0 +1,91 @@
+extends layout
+
+block headStyles
+  link(rel='stylesheet' href='/css/vehicles.css')
+
+block content
+  .main-container
+    - const activePage = 'vehicles'
+    include partials/sidebar
+
+    main.content
+      .register-vehicle-page
+        .page-heading
+          .heading-left
+            .breadcrumb
+              a(href='/dashboard') Dashboard
+              i.fas.fa-chevron-right
+              a(href='/vehicles') Vehicles
+              i.fas.fa-chevron-right
+              span Register Vehicle
+            h1 Register Vehicle
+            p Add a new vehicle and assign ownership details.
+
+        .register-card
+          if errorMessage
+            .form-alert= errorMessage
+
+          form.register-form(method='post' action='/vehicles/register')
+            .form-grid
+              .form-field
+                label(for='customerId') Existing Customer (Optional)
+                select#customerId(name='customerId')
+                  option(value='') Select a registered customer
+                  each customer in customers
+                    - const customerName = `${customer.firstName || ''} ${customer.lastName || ''}`.trim()
+                    option(
+                      value=customer._id
+                      selected=formData && formData.customerId && String(formData.customerId) === String(customer._id)
+                      data-owner=customerName
+                    ) #{customerName}#{customer.phone ? ` - ${customer.phone}` : ''}
+
+              .form-field
+                label(for='vehicleName') Vehicle Name
+                input#vehicleName(type='text' name='vehicleName' required value=formData.vehicleName)
+
+              .form-field
+                label(for='registrationNo') Registration Number
+                input#registrationNo(type='text' name='registrationNo' required value=formData.registrationNo)
+
+              .form-field
+                label(for='ownerName') Owner Name
+                input#ownerName(type='text' name='ownerName' required value=formData.ownerName)
+
+              .form-field
+                label(for='color') Color
+                input#color(type='text' name='color' value=formData.color)
+
+              .form-field
+                label(for='vehicleType') Vehicle Type
+                select#vehicleType(name='vehicleType' required)
+                  option(value='small' selected=formData.vehicleType === 'small') Small Vehicle
+                  option(value='commercial' selected=formData.vehicleType === 'commercial') Commercial
+                  option(value='heavy' selected=formData.vehicleType === 'heavy') Heavy Vehicle
+
+              .form-field
+                label(for='status') Status
+                select#status(name='status' required)
+                  option(value='Active' selected=formData.status === 'Active') Active
+                  option(value='Service Due' selected=formData.status === 'Service Due') Service Due
+
+              .form-field
+                label(for='lastService') Last Service Date
+                input#lastService(type='date' name='lastService' value=formData.lastService)
+
+            .form-actions
+              a.btn-secondary(href='/vehicles') Cancel
+              button.btn-primary(type='submit') Save Vehicle
+
+block pageScripts
+  script.
+    document.addEventListener('change', (event) => {
+      if (event.target.id !== 'customerId') return;
+      const ownerNameInput = document.getElementById('ownerName');
+      const selectedOption = event.target.options[event.target.selectedIndex];
+      if (!ownerNameInput || !selectedOption) return;
+
+      const ownerName = selectedOption.dataset.owner || '';
+      if (ownerName) {
+        ownerNameInput.value = ownerName;
+      }
+    });

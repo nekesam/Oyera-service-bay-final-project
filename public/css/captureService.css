@@ -1,0 +1,206 @@
+:root {
+	--bg: #f3f5f8;
+	--surface: #ffffff;
+	--text: #1f2937;
+	--muted: #6b7280;
+	--border: #e5e7eb;
+	--primary: #2563eb;
+	--primary-dark: #1d4ed8;
+	--secondary-bg: #e5e7eb;
+	--secondary-text: #1f2937;
+	--radius: 14px;
+	--radius-sm: 10px;
+	--shadow: 0 10px 26px rgba(15, 23, 42, 0.07);
+}
+
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+body {
+	font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+	background: var(--bg);
+	color: var(--text);
+	line-height: 1.45;
+}
+
+.page-shell {
+	min-height: 100vh;
+	padding: 28px;
+}
+
+.services-page {
+	width: 100%;
+	max-width: 1100px;
+	margin: 0 auto;
+	display: flex;
+	flex-direction: column;
+	gap: 22px;
+}
+
+.page-header h1 {
+	font-size: 1.75rem;
+	font-weight: 700;
+	margin-bottom: 6px;
+}
+
+.page-header p {
+	color: var(--muted);
+	font-size: 0.96rem;
+}
+
+.service-capture-form {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.services-records {
+	background: var(--surface);
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	padding: 20px;
+	box-shadow: var(--shadow);
+}
+
+.services-records h2 {
+	font-size: 1.2rem;
+	font-weight: 700;
+	margin-bottom: 4px;
+}
+
+.services-records p {
+	color: var(--muted);
+	font-size: 0.92rem;
+	margin-bottom: 16px;
+}
+
+.records-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.registration-grid {
+	display: grid;
+	gap: 14px;
+}
+
+.registration-grid.two-columns {
+	grid-template-columns: repeat(2, minmax(220px, 1fr));
+}
+
+.full-width {
+	grid-column: 1 / -1;
+}
+
+label {
+	display: block;
+	font-size: 0.92rem;
+	font-weight: 600;
+	color: var(--text);
+	margin-bottom: 4px;
+}
+
+input,
+select,
+textarea,
+button {
+	font: inherit;
+}
+
+input,
+select,
+textarea {
+	width: 100%;
+	border: 1px solid #d1d5db;
+	border-radius: var(--radius-sm);
+	background: #ffffff;
+	color: var(--text);
+	transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+input,
+select {
+	height: 42px;
+	padding: 0 11px;
+}
+
+textarea {
+	min-height: 120px;
+	padding: 10px 11px;
+	resize: vertical;
+}
+
+input::placeholder,
+textarea::placeholder {
+	color: #9ca3af;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+	outline: none;
+	border-color: var(--primary);
+	box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.form-actions {
+	display: flex;
+	justify-content: flex-end;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+button {
+	border: none;
+	border-radius: 8px;
+	padding: 11px 18px;
+	cursor: pointer;
+	font-size: 0.94rem;
+	font-weight: 600;
+	transition: transform 0.15s ease, background-color 0.2s ease;
+}
+
+button:hover {
+	transform: translateY(-1px);
+}
+
+button[type="submit"] {
+	background: var(--primary);
+	color: #ffffff;
+}
+
+button[type="submit"]:hover {
+	background: var(--primary-dark);
+}
+
+button.secondary {
+	background: var(--secondary-bg);
+	color: var(--secondary-text);
+}
+
+button.secondary:hover {
+	background: #d8dce2;
+}
+
+@media (max-width: 800px) {
+	.page-shell {
+		padding: 18px;
+	}
+
+	.registration-grid.two-columns {
+		grid-template-columns: 1fr;
+	}
+
+	.services-records {
+		padding: 16px;
+	}
+
+	.page-header h1 {
+		font-size: 1.45rem;
+	}
+}

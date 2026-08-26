@@ -1,0 +1,86 @@
+extends layout
+
+block headStyles
+  link(rel='stylesheet' href='/css/vehicles.css')
+
+block content
+  .main-container
+    - const activePage = 'inventory'
+    include partials/sidebar
+    main.content
+      .register-vehicle-page
+        .page-heading
+          .heading-left
+            .breadcrumb
+              a(href='/dashboard') Dashboard
+              i.fas.fa-chevron-right
+              a(href='/registerStock/stockList') Stock
+              i.fas.fa-chevron-right
+              span Register Stock
+            h1 Register Stock
+            p Add new inventory items for Oyera Auto Service Bay.
+
+        .register-card
+          if errorMessage
+            .form-alert= errorMessage
+
+          form.register-form(action='/registerStock/add-stock' method='POST')
+            .form-grid
+              .form-field
+                label(for='stockId') Stock ID
+                input#stockId(name='stockId' type='text' placeholder='Enter Stock ID' value=formData.stockId)
+
+              .form-field
+                label(for='itemName') Item Name
+                input#itemName(name='itemName' type='text' placeholder='Enter Item Name' required value=formData.itemName)
+
+              .form-field
+                label(for='category') Category
+                select#category(name='category' required)
+                  option(value='' selected=!formData.category) Select Category
+                  option(value='Engine Oil' selected=formData.category === 'Engine Oil') Engine Oil
+                  option(value='Gearbox Oil' selected=formData.category === 'Gearbox Oil') Gearbox Oil
+                  option(value='Brake Fluid' selected=formData.category === 'Brake Fluid') Brake Fluid
+                  option(value='Oil Filter' selected=formData.category === 'Oil Filter') Oil Filter
+                  option(value='Air Filter' selected=formData.category === 'Air Filter') Air Filter
+                  option(value='Brake Pads' selected=formData.category === 'Brake Pads') Brake Pads
+                  option(value='Grease' selected=formData.category === 'Grease') Grease
+                  option(value='Coolant' selected=formData.category === 'Coolant') Coolant
+
+              .form-field
+                label(for='supplier') Supplier
+                input#supplier(name='supplier' type='text' placeholder='Enter Supplier' value=formData.supplier)
+
+              .form-field
+                label(for='quantity') Quantity
+                input#quantity(name='quantity' type='number' min='0' placeholder='Enter Quantity' required value=formData.quantity)
+
+              .form-field
+                label(for='unit') Unit
+                select#unit(name='unit')
+                  option(value='' selected=!formData.unit) Select Unit
+                  option(value='Litres' selected=formData.unit === 'Litres') Litres
+                  option(value='Bottles' selected=formData.unit === 'Bottles') Bottles
+                  option(value='Pieces' selected=formData.unit === 'Pieces') Pieces
+                  option(value='Boxes' selected=formData.unit === 'Boxes') Boxes
+                  option(value='Sets' selected=formData.unit === 'Sets') Sets
+
+              .form-field
+                label(for='unitPrice') Unit Price (UGX)
+                input#unitPrice(name='unitPrice' type='number' min='0' placeholder='Enter Unit Price' required value=formData.unitPrice)
+
+              .form-field
+                label(for='date') Date Received
+                input#date(name='date' type='date' value=formData.date)
+
+              .form-field
+                label(for='storageLocation') Storage Location
+                input#storageLocation(name='storageLocation' type='text' placeholder='Enter Storage Location' value=formData.storageLocation)
+
+              .form-field(style='grid-column: 1 / -1;')
+                label(for='description') Description
+                textarea#description(name='description' rows='4' placeholder='Enter additional information about this stock item' style='border:1px solid #cbd5e1;border-radius:8px;padding:10px 12px;font-size:14px;color:#172033;background:#fff;')= formData.description
+
+            .form-actions
+              a.btn-secondary(href='/registerStock/stockList') Cancel
+              button.btn-primary(type='submit') Save Stock

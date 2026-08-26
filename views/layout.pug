@@ -1,0 +1,337 @@
+doctype html
+html(lang='en')
+  head
+    meta(charset='UTF-8')
+    meta(name='viewport' content='width=device-width, initial-scale=1.0')
+
+    title Vehicles Management
+
+    //- Bootsrap CSS
+    link(
+      rel='stylesheet'
+      href='https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css'
+      integrity='sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB'
+      crossorigin='anonymous'
+    )
+
+    //- Bootstrap Icons
+    link(
+      rel='stylesheet'
+      href='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css'
+    )
+
+    //- Font Awesome
+    link(
+      rel='stylesheet'
+      href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css'
+    )
+
+    //- Your CSS
+    link(rel='stylesheet' href='/css/layout.css')
+
+    block headStyles
+
+  body
+
+    block navConfig
+      - var showNavbar = true
+
+    //- Top Navigation Bar
+    header.nav-bar(class=showNavbar ? '' : 'd-none')
+
+      
+      //- LEFT - LOGO
+
+      .nav-left
+
+        a.brand(href='/')
+          img(
+            src='/images/service-logo.png'
+            alt='Oyera Auto Service Bay'
+          )
+
+        .brand-divider
+
+        .page-context
+          span.context-label OYERA AUTO SERVICE BAY
+          span.context-subtitle Management System
+
+
+      //- CENTER - GLOBAL SEARCH
+
+      .nav-center
+
+        form.global-search(action='#' method='get')
+
+          .search-icon
+            i.fa-solid.fa-magnifying-glass
+
+          input(
+            type='search'
+            name='q'
+            placeholder='Search customers, vehicles, stock...'
+            autocomplete='off'
+          )
+
+          .search-shortcut
+            span Ctrl
+            span K
+
+
+      //- RIGHT - SYSTEM STATUS, DATE, NOTIFICATIONS, USER PROFILE
+      .nav-right
+
+        //- System status
+        .system-status
+          span.status-dot
+          span.status-text System Online
+
+
+        //- Date
+        .nav-date
+          i.fa-regular.fa-calendar
+          span#currentDate
+
+
+        //- Notifications
+        .notification-wrapper
+
+          button.notification-btn(
+            type='button'
+            aria-label='Notifications'
+            id='notificationButton'
+          )
+
+            i.fa-regular.fa-bell
+
+            span.notification-badge 3
+
+          .notification-dropdown#notificationDropdown
+
+            .dropdown-header
+              .notification-title Notifications
+              span.notification-count-text 3 new
+
+            .notification-item
+              .notification-item-icon.blue
+                i.fa-solid.fa-car
+
+              .notification-item-content
+                strong New vehicle registered
+                span A new vehicle was added to the system.
+                small 10 minutes ago
+
+            .notification-item
+              .notification-item-icon.orange
+                i.fa-solid.fa-box
+
+              .notification-item-content
+                strong Stock alert
+                span Some spare parts are running low.
+                small 35 minutes ago
+
+            .notification-item
+              .notification-item-icon.green
+                i.fa-solid.fa-check
+
+              .notification-item-content
+                strong Service completed
+                span Vehicle service record updated.
+                small 1 hour ago
+
+            .notification-footer
+              button(type='button') View notifications
+
+
+        //- Divider
+        .nav-divider
+
+
+        //- User profile
+        .user-menu
+
+          button.user-profile-btn(
+            type='button'
+            id='profileButton'
+          )
+
+            .user-avatar
+              if user && user.fullName
+                - var initials = user.fullName.split(' ').map(name => name.charAt(0)).join('').substring(0, 2).toUpperCase()
+                span= initials
+              else
+                i.fa-solid.fa-user
+
+            .user-details
+
+              if user
+                strong= user.fullName
+              else
+                strong Admin
+
+              span Administrator
+
+            i.fa-solid.fa-chevron-down.profile-chevron
+
+
+          //- Profile dropdown
+          .profile-dropdown#profileDropdown
+
+            .profile-dropdown-header
+
+              .large-avatar
+                if user && user.fullName
+                  span= initials
+                else
+                  i.fa-solid.fa-user
+
+              .profile-header-info
+
+                if user
+                  strong= user.fullName
+                else
+                  strong Admin
+
+                span Administrator
+
+            .profile-divider
+
+            .profile-option
+              i.fa-regular.fa-user
+              span My Profile
+
+            .profile-option
+              i.fa-solid.fa-gear
+              span Account Settings
+
+            .profile-option
+              i.fa-regular.fa-circle-question
+              span Help & Support
+
+            .profile-divider
+
+            a.profile-option.logout-option(href='/logout')
+              i.fa-solid.fa-arrow-right-from-bracket
+              span Logout
+
+
+    //- Page Content
+
+    main.page-wrapper
+      block content
+
+
+    block pageScripts
+
+    //- Navbar functionality
+    script.
+      document.addEventListener('DOMContentLoaded', function () {
+
+    
+        // Current date
+
+        const dateElement = document.getElementById('currentDate');
+
+        if (dateElement) {
+          const today = new Date();
+
+          const options = {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric'
+          };
+
+          dateElement.textContent =
+            today.toLocaleDateString('en-US', options);
+        }
+
+
+        //- Notification dropdown
+
+        const notificationButton =
+          document.getElementById('notificationButton');
+
+        const notificationDropdown =
+          document.getElementById('notificationDropdown');
+
+        if (notificationButton && notificationDropdown) {
+
+          notificationButton.addEventListener('click', function (event) {
+
+            event.stopPropagation();
+
+            notificationDropdown.classList.toggle('show');
+
+            profileDropdown.classList.remove('show');
+
+          });
+
+        }
+
+
+        //- Profile dropdown
+
+        const profileButton =
+          document.getElementById('profileButton');
+
+        const profileDropdown =
+          document.getElementById('profileDropdown');
+
+        if (profileButton && profileDropdown) {
+
+          profileButton.addEventListener('click', function (event) {
+
+            event.stopPropagation();
+
+            profileDropdown.classList.toggle('show');
+
+            if (notificationDropdown) {
+              notificationDropdown.classList.remove('show');
+            }
+
+          });
+
+        }
+
+
+        //- Close dropdowns when clicking outside
+
+        document.addEventListener('click', function () {
+
+          if (notificationDropdown) {
+            notificationDropdown.classList.remove('show');
+          }
+
+          if (profileDropdown) {
+            profileDropdown.classList.remove('show');
+          }
+
+        });
+
+
+        //- Prevent dropdown from closing
+        //- when clicked inside
+
+        if (notificationDropdown) {
+
+          notificationDropdown.addEventListener(
+            'click',
+            function (event) {
+              event.stopPropagation();
+            }
+          );
+
+        }
+
+        if (profileDropdown) {
+
+          profileDropdown.addEventListener(
+            'click',
+            function (event) {
+              event.stopPropagation();
+            }
+          );
+
+        }
+
+      });

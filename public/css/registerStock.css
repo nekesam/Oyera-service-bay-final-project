@@ -1,0 +1,162 @@
+body {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+}
+
+/* NAV BAR */
+.nav-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    padding: 15px 30px;
+
+    background-color: var(--surface);
+    border-bottom: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.nav-left img {
+    width: 100px;
+    height: auto;
+    object-fit: contain;
+}
+
+.logo {
+    width: 80px;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    } 
+    
+
+
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.icon-notifications img,
+.icon-settings img {
+    width: 25px;
+    height: 25px;
+    cursor: pointer;
+}
+
+.user-profile {
+    margin-right: 10px;
+}
+
+
+.icon-notifications img:hover,
+.icon-settings img:hover {
+    transform: scale(1.1);
+    transition: 0.3s ease;
+}
+
+.user-menu {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.menu-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  display: none;
+  background: white;
+  border: 1px solid #ddd;
+  min-width: 150px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.dropdown a {
+  display: block;
+  padding: 10px;
+  text-decoration: none;
+  color: black;
+}
+
+.user-menu:hover .dropdown {
+  display: block;
+}
+
+
+/* MAIN LAYOUT */
+.main-container {
+    display: flex;
+    gap: 20px;
+    background-color: #edeef0;
+}
+
+.content{
+    flex: 1;
+    padding: 20px 30px;
+}
+
+/* SIDEBAR */
+.side-bar {
+    width: 250px;
+    min-height: calc(100vh - 80px);
+    background-color: #1E3A5F;
+    padding: 25px 15px;
+}
+
+/* MENU LIST */
+.sidebar-menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* MENU ITEMS */
+.sidebar-menu li {
+    margin-bottom: 12px;
+}
+
+/* LINKS */
+.sidebar-menu a {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+
+    text-decoration: none;
+    color: white;
+
+    padding: 12px 15px;
+    border-radius: 10px;
+
+    font-size: 16px;
+    font-weight: 500;
+
+    transition: all 0.3s ease;
+}
+
+/* ICONS */
+.sidebar-menu a i {
+    font-size: 18px;
+    width: 20px;
+    text-align: center;
+}
+
+/* HOVER EFFECT */
+.sidebar-menu a:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    transform: translateX(5px);
+}
+
+/* ACTIVE LINK */
+.sidebar-menu a.active {
+    background-color: white;
+    color: #1E3A5F;
+}

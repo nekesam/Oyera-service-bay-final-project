@@ -1,0 +1,242 @@
+extends layout
+
+block headStyles
+  link(rel='stylesheet' href='/css/technicians.css')
+
+block content
+  .main-container
+
+    - const activePage = 'technicians'
+    include partials/sidebar
+
+    main.content
+
+      .technicians-page
+
+        //- page-heading
+        .page-heading
+
+          .heading-left
+
+            .breadcrumb
+              a(href='/dashboard') Dashboard
+              i.fas.fa-chevron-right
+              span Technicians
+
+            h1 Technicians
+            p Manage technician profiles, assignments and performance.
+
+          a.add-technician-btn(href='/technicians/register')
+            i.fas.fa-plus
+            | Add Technician
+
+        //- Statistics Overview
+        section.technician-stats
+
+          article.tech-stat-card
+
+            .tech-stat-icon.blue
+              i.fas.fa-users
+
+            .tech-stat-content
+              p Total Technicians
+              h2= dashboardStats.totalTechnicians
+              span.stat-note.blue-text
+                i.fas.fa-circle
+                | Active technicians
+
+          article.tech-stat-card
+
+            .tech-stat-icon.green
+              i.fas.fa-circle-check
+
+            .tech-stat-content
+              p Present for Duty
+              h2= dashboardStats.presentToday
+              span.stat-note.green-text
+                i.fas.fa-circle
+                | Present  for duty
+
+          article.tech-stat-card
+
+            .tech-stat-icon.orange
+              i.fas.fa-calendar-days
+
+            .tech-stat-content
+              p On Leave
+              h2= dashboardStats.onLeave
+              span.stat-note.orange-text
+                i.fas.fa-circle
+                | Not available
+
+          article.tech-stat-card
+
+            .tech-stat-icon.purple
+              i.fas.fa-user
+
+            .tech-stat-content
+              p Absent Today
+              h2= dashboardStats.absentToday
+              span.stat-note.purple-text
+                i.fas.fa-circle
+                | Absent for duty
+
+        //- main technician area
+        .technician-layout
+
+         
+          section.technician-list.card-panel
+
+            .list-header
+
+              h2 Technicians List
+
+              .list-controls
+
+                select#statusFilter
+                  option(value='') All Status
+                  option(value='available') Available
+                  option(value='busy') Busy
+
+                .technician-search
+                  i.fas.fa-search
+                  input(
+                    type='text'
+                    placeholder='Search technician...'
+                  )
+
+            .table-wrapper
+
+              table.technician-table
+
+                thead
+                  tr
+                    th #
+                    th Technician
+                    th Specialization
+                    th Status
+                    th Phone
+                    th Access
+
+                tbody
+                  if technicianRecords.length
+                    each technician, index in technicianRecords
+                      tr
+                        td= index + 1
+                        td
+                          .technician-name
+                            .avatar
+                              = technician.initials
+                            strong= technician.fullName
+                        td= technician.specialization
+                        td
+                          span.status-badge(class=technician.status.toLowerCase().replace(' ', '-'))= technician.status
+                        td= technician.phone
+                        td View only
+                  else
+                    tr
+                      td(colspan='6') No technicians found.
+
+            .table-footer
+
+              span Showing 1 to #{technicianRecords.length} of #{dashboardStats.totalTechnicians} technicians
+
+          
+          aside.technician-sidebar
+
+            //- QUICK ACTIONS
+            section.side-card
+
+              h2 Quick Actions
+
+              a.quick-action(href='/technicians/register')
+                .quick-icon.blue
+                  i.fas.fa-user-plus
+                .quick-text
+                  strong Add New Technician
+                  span Register a new technician
+                i.fas.fa-chevron-right
+
+              a.quick-action(href='/technicians/assign')
+                .quick-icon.red
+                  i.fas.fa-user-check
+                .quick-text
+                  strong Assign Technician
+                  span Assign to a service record
+                i.fas.fa-chevron-right
+
+              a.quick-action(href='/technicians/schedules')
+                .quick-icon.green
+                  i.fas.fa-calendar-check
+                .quick-text
+                  strong View Schedules
+                  span Review service assignments
+                i.fas.fa-chevron-right
+
+              a.quick-action(href='/reports/technicians')
+                .quick-icon.purple
+                  i.fas.fa-chart-column
+                .quick-text
+                  strong Performance Report
+                  span View dashboard performance
+                i.fas.fa-chevron-right
+
+            //- SKILLS OVERVIEW
+            section.side-card
+
+              h2 Technician Skills Overview
+
+              .skills-overview
+
+                .skills-circle
+                  .circle-inner
+                    strong= dashboardStats.totalTechnicians
+                    span Technicians
+
+                .skills-list
+
+                  if skillsOverview.length
+                    each skill in skillsOverview
+                      .skill-row
+                        span.skill-dot.engine
+                        span= skill.name
+                        strong= `${skill.count} (${skill.percentage}%)`
+                  else
+                    .skill-row
+                      span.skill-dot.engine
+                      span No skill data yet
+                      strong 0 (0%)
+
+            //- TOP PERFORMERS
+            section.side-card
+
+              h2 Top Performers (This Month)
+              if topPerformers.length
+                each performer, index in topPerformers
+                  .performer
+
+                    .performer-number= index + 1
+
+                    .performer-avatar= performer.initials
+
+                    .performer-info
+                      strong= performer.fullName
+                      span Jobs Completed
+
+                    .performer-score= performer.jobsCompleted
+              else
+                .performer
+                  .performer-number -
+                  .performer-avatar --
+                  .performer-info
+                    strong No records yet
+                    span Jobs Completed
+                  .performer-score 0
+
+        //- FOOTER
+        footer.page-footer
+          span © 2026 Oyera Auto Service Bay Ltd. All rights reserved.
+          span Professional care for every ride.
+
+block pageScripts
+  

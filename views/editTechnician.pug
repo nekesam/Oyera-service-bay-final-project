@@ -1,0 +1,50 @@
+extends layout
+
+block headStyles
+  link(rel='stylesheet' href='/css/registerTechnician.css')
+
+block content
+  .main-container
+    - const activePage = 'technicians'
+    include partials/sidebar
+
+    main.content
+      .register-technician-page
+        .page-heading
+          .heading-left
+            .breadcrumb
+              a(href='/dashboard') Dashboard
+              i.fas.fa-chevron-right
+              a(href='/technicians') Technicians
+              i.fas.fa-chevron-right
+              span Edit Technician
+            h1 Edit Technician
+            p Update technician profile details.
+
+        .register-card
+          if errorMessage
+            .form-alert= errorMessage
+
+          form.register-form(method='post' action=`/technicians/edit/${technician._id}`)
+            .form-grid
+              .form-field
+                label(for='fullName') Full Name
+                input#fullName(type='text' name='fullName' required value=technician.fullName)
+
+              .form-field
+                label(for='role') Technician Role
+                select#role(name='role' required)
+                  option(value='Technician' selected=technician.role === 'Technician') Technician
+                  option(value='Senior technician' selected=technician.role === 'Senior technician') Senior technician
+
+              .form-field
+                label(for='email') Email
+                input#email(type='email' name='email' value=technician.email || '')
+
+              .form-field
+                label(for='phone') Phone
+                input#phone(type='text' name='phone' value=technician.phone || '')
+
+            .form-actions
+              a.btn-secondary(href='/technicians') Cancel
+              button.btn-primary(type='submit') Save Changes

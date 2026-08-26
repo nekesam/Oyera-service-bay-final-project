@@ -1,0 +1,132 @@
+extends layout
+
+block navConfig
+  - var showNavbar = false
+
+block headStyles
+  link(rel='stylesheet' href='/css/index.css')
+
+block content
+  main
+    section.hero
+      .hero-bg
+      .hero-overlay
+
+      .hero-content
+        p.welcome Welcome to
+        h2 Oyera Auto Service Bay
+        .yellow-line
+
+        p.hero-description
+          | A centralized management system designed to help Oyera Auto Service Bay
+          | efficiently manage customer, vehicle, service, technician, stock, and
+          | business records in one place.
+        .hero-buttons
+          a.btn.btn-login(href='/login')
+            i.fa-solid.fa-right-to-bracket
+            | Login
+
+          a.btn.btn-features(href='#features')
+            i.fa-solid.fa-screwdriver-wrench
+            | Explore Features
+
+      //-  .statistics
+      //-    .stat-item
+      //-      .stat-icon.stat-blue
+      //-      i.fa-solid.fa-users
+
+      //-    .stat-text
+      //-      span Happy Customers
+      //-      strong 1,250+
+
+      //-    .stat-divider
+
+      //-    .stat-item
+      //-      .stat-icon.stat-green
+      //-        i.fa-solid.fa-wrench
+
+      //-    .stat-text
+      //-      span Services Completed
+      //-      strong 3,800+
+
+      //-    .stat-divider
+
+      //-    .stat-item
+      //-      .stat-icon.stat-yellow
+      //-        i.fa-solid.fa-car
+
+      //-    .stat-text
+      //-      span Vehicles Serviced
+      //-      strong 2,150+
+
+      //-    .stat-divider
+
+      //-    .stat-item
+      //-      .stat-icon.stat-purple
+      //-        i.fa-regular.fa-calendar-days
+
+      //-    .stat-text
+      //-      span Years of Excellence
+      //-      strong 5+
+
+    section.features
+      .feature-card.customer-card
+        .feature-heading
+          .feature-icon.icon-blue
+            i.fa-solid.fa-users
+
+          .feature-title
+            h3 Customer Management
+            .small-line.line-blue
+
+        p
+          | Keep track of customer details, contact information,
+          | and service history in one centralized location.
+
+        a.learn-more.learn-blue(href='/customers/records')
+          | Learn More
+          i.fa-solid.fa-arrow-right
+
+      .feature-card.stock-card
+        .feature-heading
+          .feature-icon.icon-green
+            i.fa-solid.fa-box-open
+
+          .feature-title
+            h3 Stock Management
+            .small-line.line-green
+
+        p
+          | Monitor spare parts and workshop inventory levels
+          | to avoid shortages and improve service turnaround
+          | time.
+
+        a.learn-more.learn-green(href='/registerStock/stockList')
+          | Learn More
+          i.fa-solid.fa-arrow-right
+
+      .feature-card.vehicle-card
+        .feature-heading
+          .feature-icon.icon-red
+            i.fa-solid.fa-car
+
+          .feature-title
+            h3 Vehicle Service Records
+            .small-line.line-red
+
+        p
+          | Record and access vehicle service maintenance work
+          | for each vehicle to ensure accurate and reliable
+          | service logs.
+
+        a.learn-more.learn-red(href='/records')
+          | Learn More
+          i.fa-solid.fa-arrow-right
+
+  footer.footer
+    .footer-content
+      p
+        | © 2026 Oyera Auto Service Bay Ltd. All rights reserved.
+
+      p.footer-tagline
+        | Professional care for every ride.
