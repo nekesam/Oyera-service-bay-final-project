@@ -1,38 +1,93 @@
 extends layout
 
-block content
-    .container.mt-5
-        .row
-            .col-md-4
-                .card.p-4.shadow-sm
-                    h4.mb-3.fw-bold Edit Stock
-                    if errorMessage
-                        .alert.alert-danger.mb-3= errorMessage
-                    form(action=`/registerStock/stock/edit/${stock._id}`, method='POST')
-                    
-                        //- Item Name
-                        .mb-3
-                            label.form-label Item Name
-                            input.form-control(type='text' name='itemName' value=stock.itemName required)
-                            
-                        //- Category Dropdown (Automatically controlled by JavaScript below)
-                        .mb-3
-                            label.form-label Category
-                            select.form-select#categorySelect(name="category", required)
-                                option(value="Filters" selected=(stock.category==='Filters')) Filters
-                                option(value="Engine Oil" selected=(stock.category==='Engine Oil')) Engine Oil
-                                option(value="Gearbox Oil" selected=(stock.category==='Gearbox Oil')) Gearbox Oil
-                                option(value="Brake Fluid" selected=(stock.category==='Brake Fluid')) Brake Fluid
-                                option(value="Other" selected=(stock.category==='Other')) Other
+block headStyles
+  link(rel='stylesheet' href='/css/registerTechnician.css')
 
-                        .mb-3
-                            label.form-label Price (UGX)
-                            input.form-control(type="number", name="price", value= stock.price, placeholder="e.g., 85000", required)
-                        
-                        .mb-3
-                            label.form-label Quantity Received
-                            input.form-control(type="number", name="quantity", value= stock.quantity, placeholder="e.g., 10", required)
-                        
-                        button.btn.btn-warning.w-100.fw-bold(type="submit") Add to Stock
-                        
-            
+block content
+  .main-container
+    - const activePage = 'stock'
+    include partials/sidebar
+
+    main.content
+      .register-technician-page
+        .page-heading
+          .heading-left
+            .breadcrumb
+              a(href='/dashboard') Dashboard
+              i.fas.fa-chevron-right
+              a(href='/registerStock/stockList') Stock
+              i.fas.fa-chevron-right
+              span Edit Stock
+
+            h1 Edit Stock
+            p Update stock details.
+
+        .register-card
+          if errorMessage
+            .form-alert= errorMessage
+          form(action=`/registerStock/stock/edit/${stock._id}`, method='POST')
+
+            //- Item Name
+            .mb-3
+              label.form-label Item Name
+              input.form-control(
+                type='text'
+                name='itemName'
+                value=stock.itemName
+                required
+              )
+
+            //- Category Dropdown
+            .mb-3
+              label.form-label Category
+              select.form-select#categorySelect(
+                name='category'
+                required
+              )
+                option(
+                  value='Filters'
+                  selected=(stock.category === 'Filters')
+                ) Filters
+
+                option(
+                  value='Engine Oil'
+                  selected=(stock.category === 'Engine Oil')
+                ) Engine Oil
+
+                option(
+                  value='Gearbox Oil'
+                  selected=(stock.category === 'Gearbox Oil')
+                ) Gearbox Oil
+
+                option(
+                  value='Brake Fluid'
+                  selected=(stock.category === 'Brake Fluid')
+                ) Brake Fluid
+
+                option(
+                  value='Other'
+                  selected=(stock.category === 'Other')
+                ) Other
+
+            //- Price
+            .mb-3
+              input.form-control(
+                type="number"
+                name="unitPrice"
+                value=stock.unitPrice
+                placeholder="e.g., 85000"
+                required
+             )
+
+            //- Quantity
+            .mb-3
+              label.form-label Quantity Received
+              input.form-control(
+                type='number'
+                name='quantity'
+                value=stock.quantity
+                placeholder='e.g., 10'
+                required
+              )
+
+            button.btn.btn-warning.w-100.fw-bold(type='submit') Update Stock

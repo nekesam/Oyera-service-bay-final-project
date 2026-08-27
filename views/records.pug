@@ -12,7 +12,7 @@ block content
         - const totalRecords = records.length
         - const todayDate = new Date().toDateString()
         - const servicedToday = records.filter((record) => new Date(record.date).toDateString() === todayDate).length
-        - const uniqueCustomers = new Set(records.map((record) => (record.customerName || '').trim()).filter(Boolean)).size
+        - const uniqueCustomers = new Set(records.map((record) => record.customer?._id?.toString()).filter(Boolean)).size
         - const totalRevenue = records.reduce((sum, record) => sum + (Number(record.totalCost) || 0), 0)
         - const averageTicket = totalRecords ? Math.round(totalRevenue / totalRecords) : 0
 
@@ -98,9 +98,16 @@ block content
                       tr
                         td= index + 1
                         td= new Date(record.date).toLocaleDateString()
-                        td= record.customerName
                         td
-                          span.status-badge.plate-badge= record.carPlate || record.carplate
+                          if record.customer
+                            = `${record.customer.firstName} ${record.customer.lastName}`
+                          else
+                            | Unknown Customer
+                        td
+                          if record.vehicle
+                            span.status-badge.plate-badge= record.vehicle.registrationNo
+                          else
+                            span.status-badge.plate-badge N/A
                         td= (record.servicesDone || []).join(', ')
                         td= (record.technicians || []).filter(Boolean).map((technician) => technician.fullName || 'Unknown Technician').join(', ')
                         td= (Number(record.totalCost) || 0).toLocaleString()

@@ -174,72 +174,84 @@ export const getAllStock = async(req, res) =>{
 	}
 }
 
-export const getEditStockForm = async(req, res) =>{
-	try {
-		const stock = await Stock.findById(req.params.id).lean()
-		if(!stock){
-			return res.status(404).send('Stock item not found')
-		}
-		const role = req.session?.userRole;
-		res.render('editStock', {
-			stock: {
-				...stock,
-				price: stock.unitPrice,
-			},
-			permissions: getRolePermissions(role),
-			canManageStock: canManageStockByRole(role),
-			errorMessage: null,
-		})
-	} catch (error) {
-		console.error('Error loading editStockForm', error)
-		res.status(500).send('Error loading Edit Stock Form')
-	}
-}
+export const getEditStockForm = async (req, res) => {
+    try {
+        const stock = await Stock.findById(req.params.id).lean();
 
-export const updateStock = async(req, res) =>{
-	try {
-		const cleaned = sanitizeStockPayload(req.body);
-		if (req.stockValidationErrors?.length) {
-			const role = req.session?.userRole;
-			const stock = await Stock.findById(req.params.id).lean();
-			return res.status(400).render('editStock', {
-				stock: {
-					...(stock || {}),
-					...cleaned,
-					price: cleaned.unitPrice,
-				},
-				permissions: getRolePermissions(role),
-				canManageStock: canManageStockByRole(role),
-				errorMessage: req.stockValidationErrors.join(' '),
-			});
-		}
+        if (!stock) {
+            return res.status(404).send('Stock item not found');
+        }
 
-		await Stock.findByIdAndUpdate(
-			req.params.id,
-			{
-				...cleaned,
-				unitPrice: cleaned.unitPrice,
-			},
-			{ runValidators: true }
-		)
-		res.redirect('/registerStock/stockList')
-	} catch (error) {
-		console.error('Error updating stock', error)
-		const role = req.session?.userRole;
-		const stock = await Stock.findById(req.params.id).lean();
-		const cleaned = sanitizeStockPayload(req.body);
-		res.status(400).render('editStock', {
-			stock: {
-				...(stock || {}),
-				...cleaned,
-				price: cleaned.unitPrice,
-			},
-			permissions: getRolePermissions(role),
-			canManageStock: canManageStockByRole(role),
-			errorMessage: 'Error updating stock. Check your input values and try again.',
-		})
-	}
-}
+        const role = req.session?.userRole;
+
+        res.render('editStock', {
+            stock,
+            permissions: getRolePermissions(role),
+            canManageStock: canManageStockByRole(role),
+            errorMessage: null,
+        });
+    } catch (error) {
+        console.error('Error loading editStockForm', error);
+        res.status(500).send('Error loading Edit Stock Form');
+    }
+};
+
+export const updateStock = async (req, res) => {
+    try {
+        const cleaned = sanitizeStockPayload(req.body);
+
+        const role = req.session?.userRole;
+
+        // Check validation errors
+        if (req.stockValidationErrors?.length) {
+            const stock = await Stock.findById(req.params.id).lean();
+
+            return res.status(400).render('editStock', {
+                stock: {
+                    ...(stock || {}),
+                    ...cleaned,
+                },
+                permissions: getRolePermissions(role),
+                canManageStock: canManageStockByRole(role),
+                errorMessage: req.stockValidationErrors.join(' '),
+            });
+        }
+
+        // Update stock
+        await Stock.findByIdAndUpdate(
+            req.params.id,
+            {
+                itemName: cleaned.itemName,
+                category: cleaned.category,
+                quantity: cleaned.quantity,
+                unitPrice: cleaned.unitPrice,
+            },
+            {
+                new: true,
+                runValidators: true,
+            }
+        );
+
+        res.redirect('/registerStock/stockList');
+
+    } catch (error) {
+        console.error('Error updating stock:', error);
+
+        const role = req.session?.userRole;
+        const stock = await Stock.findById(req.params.id).lean();
+        const cleaned = sanitizeStockPayload(req.body);
+
+        return res.status(400).render('editStock', {
+            stock: {
+                ...(stock || {}),
+                ...cleaned,
+            },
+            permissions: getRolePermissions(role),
+            canManageStock: canManageStockByRole(role),
+            errorMessage: error.message || 'Error updating stock.',
+        });
+    }
+};
 
 export const deleteStock = async(req, res)=>{
 	try {

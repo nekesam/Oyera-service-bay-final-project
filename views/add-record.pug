@@ -26,18 +26,30 @@ block content
 
           .form-alert
             strong Pricing Guide:
-            |  Engine Oil (UGX 79K-200K), Brake Fluid (UGX 13K-20K), Oil Filter (UGX 15K-20K), Alignment (UGX 30K), Balance (UGX 20K), Standard Labor (UGX 20K).
+            | Engine Oil (UGX 79K-200K), Brake Fluid (UGX 13K-20K), Oil Filter (UGX 15K-20K), Alignment (UGX 30K), Balance (UGX 20K), Standard Labor (UGX 20K).
 
           form.register-form(action='/addRecord' method='POST')
             .form-grid
               .form-field
-                label(for='customerName') Customer Name
-                input#customerName(type='text' name='customerName' required value=formData && formData.customerName ? formData.customerName : '')
-
+                label(for='customer') Customer Name
+                select#customer(name='customer' required)
+                  option(value='') Select Customer
+                  each customer in customers
+                    - const customerFullName = `${customer.firstName} ${customer.lastName}`.trim()
+                    option(
+                      value=customer._id
+                      selected=formData && formData.customer === String(customer._id)
+                    )= customerFullName
               .form-field
-                label(for='carPlate') Car Number Plate
-                input#carPlate(type='text' name='carPlate' required value=formData && formData.carPlate ? formData.carPlate : '')
-
+                label(for='vehicle') Car Number Plate
+                select#vehicle(name='vehicle' required)
+                  option(value='') Select Vehicle
+                  each vehicle in vehicles
+                    option(
+                      value=vehicle._id
+                      data-customer-id=vehicle.customerId
+                      selected=formData && formData.vehicle === String(vehicle._id)
+                    )= vehicle.registrationNo
               .form-field
                 label(for='servicesDone') Services Performed (Hold Ctrl/Cmd to select multiple)
                 select#servicesDone(name='servicesDone' multiple required size='5')
@@ -86,9 +98,9 @@ block content
         button.btn-secondary(type='button' style='height:44px;' onclick="this.closest('.part-row').remove()") Remove
 
 block pageScripts
-  //- CLIENT-SIDE LOGIC
   script.
     const LABOUR_CHARGE = 20000;
+
     const SERVICE_PRICES = {
       'Wheel Alignment': 30000,
       'Wheel Balance': 20000
@@ -100,55 +112,141 @@ block pageScripts
       const partRows = document.querySelectorAll('#parts-container .part-row');
 
       let servicesCost = 0;
+
       if (servicesSelect) {
-        const selectedServices = Array.from(servicesSelect.selectedOptions).map((opt) => opt.value);
-        servicesCost = selectedServices.reduce((sum, serviceName) => sum + (SERVICE_PRICES[serviceName] || 0), 0);
+        const selectedServices = Array.from(servicesSelect.selectedOptions)
+          .map((opt) => opt.value);
+
+        servicesCost = selectedServices.reduce(
+          (sum, serviceName) =>
+            sum + (SERVICE_PRICES[serviceName] || 0),
+          0
+        );
       }
 
       let partsCost = 0;
+
       partRows.forEach((row) => {
         const partSelect = row.querySelector('select[name="partIds"]');
         const qtyInput = row.querySelector('input[name="partQuantities"]');
+
         if (!partSelect || !qtyInput) return;
 
-        const selectedOption = partSelect.options[partSelect.selectedIndex];
-        const unitPrice = Number(selectedOption?.dataset?.price || 0);
+        const selectedOption =
+          partSelect.options[partSelect.selectedIndex];
+
+        const unitPrice =
+          Number(selectedOption?.dataset?.price || 0);
+
         const qty = Number(qtyInput.value || 0);
+
         if (qty > 0) {
           partsCost += unitPrice * qty;
         }
       });
 
-      totalCostDisplay.value = LABOUR_CHARGE + servicesCost + partsCost;
+      totalCostDisplay.value =
+        LABOUR_CHARGE + servicesCost + partsCost;
     }
 
     function addPartRow() {
       const container = document.getElementById('parts-container');
       const template = document.getElementById('part-row-template');
+
       const clone = template.content.cloneNode(true);
+
       container.appendChild(clone);
+
       recalculateTotal();
     }
 
     document.addEventListener('change', (event) => {
-      if (event.target.matches('#servicesDone, select[name="partIds"]')) {
+      if (
+        event.target.matches(
+          '#servicesDone, select[name="partIds"]'
+        )
+      ) {
         recalculateTotal();
       }
     });
 
     document.addEventListener('input', (event) => {
-      if (event.target.matches('input[name="partQuantities"]')) {
+      if (
+        event.target.matches(
+          'input[name="partQuantities"]'
+        )
+      ) {
         recalculateTotal();
       }
     });
 
     document.addEventListener('click', (event) => {
-      if (event.target.closest('button[onclick*="remove"]')) {
+      if (
+        event.target.closest(
+          'button[onclick*="remove"]'
+        )
+      ) {
         requestAnimationFrame(recalculateTotal);
       }
     });
 
+
+    // CUSTOMER → VEHICLE FILTERING
+
+    const customerSelect =
+      document.getElementById('customer');
+
+    const vehicleSelect =
+      document.getElementById('vehicle');
+
+    function filterVehiclesByCustomer() {
+
+      if (!customerSelect || !vehicleSelect) {
+        return;
+      }
+
+      const selectedCustomerId =
+        customerSelect.value;
+
+      Array.from(vehicleSelect.options).forEach(
+        (option, index) => {
+
+          // Keep "Select Vehicle" visible
+          if (index === 0) {
+            option.hidden = false;
+            return;
+          }
+
+          const vehicleCustomerId =
+            option.dataset.customerId;
+
+          option.hidden =
+            !selectedCustomerId ||
+            vehicleCustomerId !== selectedCustomerId;
+
+          if (option.hidden && option.selected) {
+            option.selected = false;
+            vehicleSelect.value = '';
+          }
+        }
+      );
+    }
+
+    customerSelect?.addEventListener('change', () => {
+
+      vehicleSelect.value = '';
+
+      filterVehiclesByCustomer();
+
+    });
+
+
     document.addEventListener('DOMContentLoaded', () => {
+
       addPartRow();
+
       recalculateTotal();
+
+      filterVehiclesByCustomer();
+
     });

@@ -1,3 +1,17 @@
+:root {
+    --bg: #f5f7fb;
+    --surface: #ffffff;
+    --text: #172033;
+    --muted: #64748b;
+    --border: #e2e8f0;
+    --primary: #1769e8;
+    --primary-dark: #0f56c9;
+    --sidebar: #0d1b2e;
+    --shadow: 0 5px 18px rgba(15, 23, 42, 0.06);
+    --radius: 10px;
+}
+
+
 * {
     margin: 0;
     padding: 0;

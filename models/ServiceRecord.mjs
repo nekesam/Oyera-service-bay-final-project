@@ -1,40 +1,62 @@
 import mongoose from 'mongoose';
+
 const serviceRecordSchema = new mongoose.Schema({
-    customerName: {
-        type: String,
+
+    customer: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Customers',
         required: true
     },
-    carPlate: {
-        type: String,
+
+    vehicle: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Vehicle',
         required: true
     },
+
     servicesDone: [{
         type: String,
         required: true
     }],
-     partsUsed: [{
-          stockId: {type: mongoose.Schema.Types.ObjectId, ref: 'Stock'},
-        itemName: {type: String},
-        quantity: {type: Number}
+
+    partsUsed: [{
+        stockId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Stock'
+        },
+        itemName: {
+            type: String
+        },
+        quantity: {
+            type: Number
+        }
     }],
+
     technicians: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
     }],
-    labourCharge:{
+
+    labourCharge: {
         type: Number,
         default: 20000
     },
+
     totalCost: {
-       type: Number,
-       required: true
+        type: Number,
+        required: true
     },
+
     date: {
         type: Date,
         default: Date.now
     }
-})
 
-const serviceRecord = mongoose.model('ServiceRecord', serviceRecordSchema);
-export default serviceRecord;
+});
+
+const ServiceRecord =
+    mongoose.models.ServiceRecord ||
+    mongoose.model('ServiceRecord', serviceRecordSchema);
+
+export default ServiceRecord;

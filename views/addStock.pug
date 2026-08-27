@@ -8,6 +8,10 @@ block content
 					h4.mb-3.fw-bold Register Stock
 					if errorMessage
 						.alert.alert-danger.mb-3= errorMessage
+					.form-alert
+						strong Pricing Guide:
+						|  Engine Oil (UGX 79K-200K), Brake Fluid (UGX 13K-20K), Oil Filter (UGX 15K-20K), Alignment (UGX 30K), Balance (UGX 20K), Standard Labor (UGX 20K).
+
 					form(action='/registerStock/addStock' method='POST')
 						.mb-3
 							label.form-label Item Name

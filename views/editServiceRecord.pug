@@ -5,15 +5,19 @@ block content
     .row.justify-content-center
       .col-lg-8
         .card.p-5.shadow-sm
-          h2.mb-4.fw-bold Service Record
+          h2.mb-4.fw-bold Edit Service Record
           form(action=`/records/edit/${record._id}`, method="POST")
             .row.mb-3
               .col-md-6
                 label.form-label Customer Name
-                input.form-control(type="text", name="customerName", value=record.customerName, required)
+                select.form-select(name="customer" required)
+                  option(value=record.customer._id selected=true)
+                    = `${record.customer.firstName} ${record.customer.lastName}`
               .col-md-6
                 label.form-label Car Number Plate
-                input.form-control(type="text", name="carPlate", value=record.carPlate, required)
+                select.form-select(name="vehicle" required)
+                  option(value=record.vehicle._id selected=true)
+                    = record.vehicle.registrationNo
 
             //- includes checks whether an item is selected in the servicesDone array and sets the selected attribute accordingly
             .mb-3
