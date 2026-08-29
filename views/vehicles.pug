@@ -107,7 +107,6 @@ block content
                   )
 
             .table-wrapper
-
               table.vehicle-table
 
                 thead
@@ -148,11 +147,10 @@ block content
                           span.status-badge(class=vehicle.statusClass)= vehicle.status
 
                         td
-                          a.btn.btn-sm.btn-outline-primary.me-1(href=`/vehicles/edit/${vehicle._id}`)
-                            i.bi.bi-pencil
-                          form.d-inline(action=`/vehicles/delete/${vehicle._id}` method='post' onsubmit="return confirm('Are you sure you want to delete this vehicle?');")
-                            button.btn.btn-sm.btn-danger(type='submit')
-                              i.bi.bi-trash
+                          .table-actions
+                            a.action-link.edit(href=`/vehicles/edit/${vehicle._id}`) Edit
+                            form.action-form(action=`/vehicles/delete/${vehicle._id}` method='POST' onsubmit="return confirm('Delete this vehicle?');")
+                              button.action-btn.delete(type='submit') Delete
                   else
                     tr
                       td(colspan='8') No vehicles found.
