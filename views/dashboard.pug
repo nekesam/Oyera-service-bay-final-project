@@ -34,7 +34,8 @@ block content
               i.fas.fa-coins
             .card-content
               p.card-title Total Revenue
-              h2#statRevenue UGX #{dashboardStats && dashboardStats.totalRevenue !== undefined ? Number(dashboardStats.totalRevenue).toLocaleString() : 0}
+              h2#statRevenue
+                | UGX #{dashboardStats && dashboardStats.totalRevenue !== undefined ? Number(dashboardStats.totalRevenue).toLocaleString() : 0}
 
           article.stat-card
             .stat-icon.active-jobs
@@ -50,6 +51,7 @@ block content
               p.card-title Total Customers
               h2#statPartsSold= dashboardStats && dashboardStats.totalCustomers !== undefined ? dashboardStats.totalCustomers : 0
 
+        //- Additional Dashboard Statistics
         section.dashboard-stats(aria-label="Additional Dashboard Statistics")
 
           article.stat-card
@@ -64,7 +66,8 @@ block content
               i.fas.fa-warehouse
             .card-content
               p.card-title Inventory Value
-              h2#statInventoryValue UGX #{dashboardStats && dashboardStats.inventoryValue !== undefined ? Number(dashboardStats.inventoryValue).toLocaleString() : 0}
+              h2#statInventoryValue
+                | UGX #{dashboardStats && dashboardStats.inventoryValue !== undefined ? Number(dashboardStats.inventoryValue).toLocaleString() : 0}
 
           article.stat-card
             .stat-icon.total
@@ -76,13 +79,13 @@ block content
         //- Two Column Section
         .dashboard-grid
 
-          // ===== RECENT SERVICE RECORDS =====
+          //- Recent Service Records
           section.dashboard-card.large
 
             .card-header
               h2 Recent Service Records
-              a(href="/service-records") View All
-
+              a(href="/records") View All
+              
             table.table
               thead
                 tr
@@ -94,19 +97,45 @@ block content
                   th Total Cost
 
               tbody
-                each record in recentRecords
-                  tr
-                    td= new Date(record.date).toLocaleDateString()
-                    td= record.customerName
-                    td= record.carPlate || record.carplate
-                    td= (record.servicesDone || []).join(', ')
-                    td= (record.technicians || []).map(t => t.fullName || t).join(', ')
-                    td= Number(record.totalCost || 0).toLocaleString()
+                if recentRecords && recentRecords.length
+                  each record in recentRecords
+                    tr
+
+                      //- Date
+                      td= new Date(record.date).toLocaleDateString()
+
+                      //- Customer Name
+                      td
+                        if record.customer
+                          | #{record.customer.firstName} #{record.customer.lastName}
+                        else
+                          | Unknown Customer
+
+                      //- Vehicle Registration Number
+                      td
+                        if record.vehicle
+                          | #{record.vehicle.registrationNo}
+                        else
+                          | Unknown Plate
+
+                      //- Services
+                      td= (record.servicesDone || []).join(', ')
+
+                      //- Technicians
+                      td
+                        if record.technicians && record.technicians.length
+                          = record.technicians.map(t => t.fullName || 'Unknown Technician').join(', ')
+                        else
+                          | No technician assigned
+
+                      //- Total Cost
+                      td= Number(record.totalCost || 0).toLocaleString()
+
                 else
                   tr
                     td.text-center.text-muted(colspan='6') No service records yet.
 
-          //- Stock List Section
+          //- Recent Stock List
           section.dashboard-card
 
             .card-header
@@ -122,15 +151,17 @@ block content
                   th Unit Price
 
               tbody
-                each stock in recentStockItems
-                  tr
-                    td= new Date(stock.date || stock.createdAt).toLocaleDateString()
-                    td= stock.itemName
-                    td= stock.quantity !== undefined && stock.quantity !== null ? stock.quantity : 0
-                    td= Number(stock.unitPrice || 0).toLocaleString()
+                if recentStockItems && recentStockItems.length
+                  each stock in recentStockItems
+                    tr
+                      td= new Date(stock.date || stock.createdAt).toLocaleDateString()
+                      td= stock.itemName
+                      td= stock.quantity !== undefined && stock.quantity !== null ? stock.quantity : 0
+                      td= Number(stock.unitPrice || 0).toLocaleString()
+
                 else
                   tr
-                    td.text-center.text-muted(colspan='5') No stock items yet.
+                    td.text-center.text-muted(colspan='4') No stock items yet.
 
         //- Quick Actions Section
         section.quick-actions
@@ -163,3 +194,4 @@ block pageScripts
   script(src="/js/validation.js")
   script(src="/js/store.js")
   script(src="/js/dashboard.js")
+

@@ -4,143 +4,256 @@ import User from "../models/User.mjs";
 import Customers from "../models/Customers.mjs";
 
 export const dashboardPermissionsByRole = {
-	Admin: {
-		showCustomers: true,
-		showVehicles: true,
-		showServices: true,
-		showServiceRegistration: true,
-		showTechnicians: true,
-		showInventory: true,
-		showPayments: true,
-		showReports: true,
-		showSettings: true,
-		showQuickServiceEntry: true,
-	},
-	"Senior technician": {
-		showCustomers: true,
-		showVehicles: true,
-		showServices: true,
-		showServiceRegistration: true,
-		showTechnicians: false,
-		showInventory: true,
-		showPayments: false,
-		showReports: true,
-		showSettings: false,
-		showQuickServiceEntry: true,
-	},
-	Technician: {
-		showCustomers: false,
-		showVehicles: true,
-		showServices: true,
-		showServiceRegistration: false,
-		showTechnicians: false,
-		showInventory: true,
-		showPayments: false,
-		showReports: false,
-		showSettings: false,
-		showQuickServiceEntry: false,
-	},
+Admin: {
+showCustomers: true,
+showVehicles: true,
+showServices: true,
+showServiceRegistration: true,
+showTechnicians: true,
+showInventory: true,
+showPayments: true,
+showReports: true,
+showSettings: true,
+showQuickServiceEntry: true,
+},
+
+"Senior technician": {
+showCustomers: true,
+showVehicles: true,
+showServices: true,
+showServiceRegistration: true,
+showTechnicians: false,
+showInventory: true,
+showPayments: false,
+showReports: true,
+showSettings: false,
+showQuickServiceEntry: true,
+},
+
+Technician: {
+showCustomers: false,
+showVehicles: true,
+showServices: true,
+showServiceRegistration: false,
+showTechnicians: false,
+showInventory: true,
+showPayments: false,
+showReports: false,
+showSettings: false,
+showQuickServiceEntry: false,
+},
 };
 
 const getRolePermissions = (role) => {
-	return dashboardPermissionsByRole[role] || dashboardPermissionsByRole.Technician;
+return (
+dashboardPermissionsByRole[role] ||
+dashboardPermissionsByRole.Technician
+);
 };
 
 const toNumber = (value) => {
-	const parsed = Number(value);
-	return Number.isFinite(parsed) ? parsed : 0;
+const parsed = Number(value);
+return Number.isFinite(parsed) ? parsed : 0;
 };
 
 export const getDashboard = async (req, res) => {
-	try {
-		const todayStart = new Date();
-		todayStart.setHours(0, 0, 0, 0);
-		const tomorrowStart = new Date(todayStart);
-		tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+try {
 
-		const [
-			recentRecords,
-			recentStockItems,
-			totalServiceRecords,
-			totalCustomers,
-			totalUsers,
-			totalStockItems,
-			distinctCarPlates,
-			todayCars,
-			totalRevenueAggregation,
-			todayRevenueAggregation,
-			partsSoldAggregation,
-			stockValueAggregation,
-		] = await Promise.all([
-			ServiceRecord.find()
-				.populate("technicians", "fullName")
-				.sort({ date: -1 })
-				.limit(5),
-			Stock.find()
-				.sort({ date: -1, createdAt: -1 })
-				.limit(5),
-			ServiceRecord.countDocuments(),
-			Customers.countDocuments(),
-			User.countDocuments(),
-			Stock.countDocuments(),
-			ServiceRecord.distinct("carPlate"),
-			ServiceRecord.countDocuments({ date: { $gte: todayStart, $lt: tomorrowStart } }),
-			ServiceRecord.aggregate([{ $group: { _id: null, totalRevenue: { $sum: "$totalCost" } } }]),
-			ServiceRecord.aggregate([
-				{ $match: { date: { $gte: todayStart, $lt: tomorrowStart } } },
-				{ $group: { _id: null, todayRevenue: { $sum: "$totalCost" } } },
-			]),
-			ServiceRecord.aggregate([
-				{ $unwind: { path: "$partsUsed", preserveNullAndEmptyArrays: true } },
-				{ $group: { _id: null, partsSold: { $sum: "$partsUsed.quantity" } } },
-			]),
-			Stock.aggregate([
-				{
-					$group: {
-						_id: null,
-						totalInventoryValue: {
-							$sum: {
-								$multiply: [
-									{ $ifNull: ["$quantity", 0] },
-									{ $ifNull: ["$unitPrice", 0] },
-								],
-							},
-						},
-					},
-				},
-			]),
-		]);
+	//today's date range
 
-		const totalRevenue = toNumber(totalRevenueAggregation[0]?.totalRevenue);
-		const todayRevenue = toNumber(todayRevenueAggregation[0]?.todayRevenue);
-		const partsSold = toNumber(partsSoldAggregation[0]?.partsSold);
-		const inventoryValue = toNumber(stockValueAggregation[0]?.totalInventoryValue);
-		const totalCars = distinctCarPlates.filter((plate) => typeof plate === "string" && plate.trim()).length;
+const todayStart = new Date();
+todayStart.setHours(0, 0, 0, 0);
 
-		const dashboardStats = {
-			totalRevenue,
-			todayRevenue,
-			totalCars,
-			carsToday: todayCars,
-			activeJobs: totalServiceRecords,
-			totalCustomers,
-			totalUsers,
-			totalStockItems,
-			partsSold,
-			inventoryValue,
-		};
+const tomorrowStart = new Date(todayStart);
+tomorrowStart.setDate(tomorrowStart.getDate() + 1);
 
-		const role = req.session?.userRole;
-		const permissions = getRolePermissions(role);
+//fetch from database
+const [
+  recentRecords,
+  recentStockItems,
+  totalServiceRecords,
+  totalCustomers,
+  totalUsers,
+  totalStockItems,
+  distinctVehicles,
+  todayCars,
+  totalRevenueAggregation,
+  todayRevenueAggregation,
+  partsSoldAggregation,
+  stockValueAggregation,
+] = await Promise.all([
 
-		return res.render("dashboard", {
-			dashboardStats,
-			recentRecords,
-			recentStockItems,
-			permissions,
-		});
-	} catch (error) {
-		console.error("Error fetching dashboard data:", error);
-		return res.status(500).send("Error loading dashboard metrics");
-	}
+ 
+  ServiceRecord.find()
+    .populate(
+      "customer",
+      "firstName lastName phone email"
+    )
+    .populate(
+      "vehicle",
+      "registrationNo vehicleName vehicleType"
+    )
+    .populate(
+      "technicians",
+      "fullName"
+    )
+    .sort({ date: -1 })
+    .limit(5),
+
+  Stock.find()
+    .sort({ date: -1, createdAt: -1 })
+    .limit(5),
+
+  ServiceRecord.countDocuments(),
+
+  Customers.countDocuments(),
+
+  User.countDocuments(),
+
+  Stock.countDocuments(),
+
+  ServiceRecord.distinct("vehicle"),
+
+  ServiceRecord.countDocuments({
+    date: {
+      $gte: todayStart,
+      $lt: tomorrowStart,
+    },
+  }),
+
+  
+  ServiceRecord.aggregate([
+    {
+      $group: {
+        _id: null,
+        totalRevenue: {
+          $sum: "$totalCost",
+        },
+      },
+    },
+  ]),
+
+  
+  ServiceRecord.aggregate([
+    {
+      $match: {
+        date: {
+          $gte: todayStart,
+          $lt: tomorrowStart,
+        },
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        todayRevenue: {
+          $sum: "$totalCost",
+        },
+      },
+    },
+  ]),
+
+  
+  ServiceRecord.aggregate([
+    {
+      $unwind: {
+        path: "$partsUsed",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        partsSold: {
+          $sum: "$partsUsed.quantity",
+        },
+      },
+    },
+  ]),
+
+  
+  Stock.aggregate([
+    {
+      $group: {
+        _id: null,
+        totalInventoryValue: {
+          $sum: {
+            $multiply: [
+              {
+                $ifNull: ["$quantity", 0],
+              },
+              {
+                $ifNull: ["$unitPrice", 0],
+              },
+            ],
+          },
+        },
+      },
+    },
+  ]),
+]);
+
+
+const totalRevenue = toNumber(
+  totalRevenueAggregation[0]?.totalRevenue
+);
+
+const todayRevenue = toNumber(
+  todayRevenueAggregation[0]?.todayRevenue
+);
+
+const partsSold = toNumber(
+  partsSoldAggregation[0]?.partsSold
+);
+
+const inventoryValue = toNumber(
+  stockValueAggregation[0]?.totalInventoryValue
+);
+
+const totalCars = distinctVehicles.length;
+
+const dashboardStats = {
+  totalRevenue,
+  todayRevenue,
+
+  totalCars,
+
+  carsToday: todayCars,
+
+  activeJobs: totalServiceRecords,
+
+  totalCustomers,
+
+  totalUsers,
+
+  totalStockItems,
+
+  partsSold,
+
+  inventoryValue,
+};
+
+const role = req.session?.userRole;
+
+const permissions = getRolePermissions(role);
+
+return res.render("dashboard", {
+  dashboardStats,
+  recentRecords,
+  recentStockItems,
+  permissions,
+});
+
+} catch (error) {
+console.error(
+"Error fetching dashboard data:",
+error
+);
+
+return res
+  .status(500)
+  .send("Error loading dashboard metrics");
+
+
+}
 };

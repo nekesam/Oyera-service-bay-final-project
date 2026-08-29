@@ -234,6 +234,16 @@ body {
     border-collapse:collapse;
 }
 
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.table-responsive .table {
+    min-width: 700px;
+}
+
 .table th{
     background:#f8fafc;
     color:#374151;

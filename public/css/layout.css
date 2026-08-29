@@ -228,26 +228,17 @@ a {
   border-radius: 20px;
 }
 
-.status-dot {
-  width: 7px;
-  height: 7px;
-
-  border-radius: 50%;
-
-  background: #20a35a;
-
-  box-shadow: 0 0 0 3px rgba(32, 163, 90, 0.12);
-}
-
-.status-text {
-  color: #24804b;
-
-  font-size: 10px;
-  font-weight: 600;
-}
-
-
 /* Date */
+.fa-calendar {
+    color: #16a34a;
+    font-size: 1rem;
+}
+
+#currentDate {
+    color: #06752f;
+    font-size: 1rem;
+    font-weight: 600;
+}
 
 .nav-date {
   display: flex;

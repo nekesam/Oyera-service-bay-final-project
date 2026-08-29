@@ -1,9 +1,12 @@
 {
-  "name": "helloworld",
+  "name": "oyera-service-bay",
   "version": "1.0.0",
-  "description": "This is my helloWorld project",
+  "description": "Garage management system for Oyera Service Bay",
   "keywords": [
-    "helloworld"
+    "garage",
+    "management",
+    "service",
+    "oyera"
   ],
   "license": "ISC",
   "author": "Martha Nekesa",
