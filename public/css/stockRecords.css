@@ -292,6 +292,56 @@ body {
     color: #b91c1c;
 }
 
+.table-actions {
+    display: flex;
+    align-items: center;
+}
+
+.action-link,
+.action-btn {
+    height: 30px;
+    padding: 0 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    border: 1px solid transparent;
+    cursor: pointer;
+}
+
+.action-link.edit {
+    background: #e8f1ff;
+    border-color: #bfdbfe;
+    color: #1d4ed8;
+}
+
+.action-link.edit:hover {
+    background: #dbeafe;
+}
+
+.action-form {
+    margin: 0;
+}
+
+.action-btn.delete {
+    background: #fff1f2;
+    border-color: #fecdd3;
+    color: #be123c;
+}
+
+.action-btn.delete:hover {
+    background: #ffe4e6;
+}
+
+
+.action-btn:hover {
+    color: var(--primary);
+}
+
+
 .table-footer {
     min-height: 60px;
     padding: 0 18px;
@@ -300,32 +350,6 @@ body {
     justify-content: space-between;
     color: var(--muted);
     font-size: 12px;
-}
-
-.pagination {
-    display: flex;
-    gap: 6px;
-}
-
-.pagination button {
-    width: 31px;
-    height: 31px;
-    border: 1px solid #d5dce6;
-    border-radius: 6px;
-    background: #ffffff;
-    cursor: pointer;
-    color: #475569;
-}
-
-.pagination button:hover,
-.pagination button.active {
-    background: var(--primary);
-    border-color: var(--primary);
-    color: #ffffff;
-}
-
-.pagination button i {
-    font-size: 9px;
 }
 
 .stock-sidebar {

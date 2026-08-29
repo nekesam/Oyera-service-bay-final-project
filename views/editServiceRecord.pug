@@ -1,27 +1,47 @@
 extends layout
 
+block headStyles
+  link(rel='stylesheet' href='/css/registerTechnician.css')
+
 block content
-  .container.mt-5.mb-5
-    .row.justify-content-center
-      .col-lg-8
-        .card.p-5.shadow-sm
-          h2.mb-4.fw-bold Edit Service Record
+  block content
+  .main-container
+    - const activePage = 'services'
+    include partials/sidebar
+
+    main.content
+      .register-technician-page
+        .page-heading
+          .heading-left
+            .breadcrumb
+              a(href='/dashboard') Dashboard
+              i.fas.fa-chevron-right
+              a(href='/records') Services
+              i.fas.fa-chevron-right
+              span Edit Service Record
+
+            h1 Edit Service Record
+            p Update service record details.
+
+        .register-card
+          if errorMessage
+            .form-alert= errorMessage
           form(action=`/records/edit/${record._id}`, method="POST")
             .row.mb-3
               .col-md-6
-                label.form-label Customer Name
+                label.form-label.fw-bold Customer Name
                 select.form-select(name="customer" required)
                   option(value=record.customer._id selected=true)
                     = `${record.customer.firstName} ${record.customer.lastName}`
               .col-md-6
-                label.form-label Car Number Plate
+                label.form-label.fw-bold Car Number Plate
                 select.form-select(name="vehicle" required)
                   option(value=record.vehicle._id selected=true)
                     = record.vehicle.registrationNo
 
             //- includes checks whether an item is selected in the servicesDone array and sets the selected attribute accordingly
             .mb-3
-              label.form-label Services Performed (Hold Ctrl/Cmd to select multiple)
+              label.form-label.fw-bold Services Performed (Hold Ctrl/Cmd to select multiple)
               select.form-select(name="servicesDone", multiple, required, size="5")
                 option(value="Engine Oil and Filters" selected=record.servicesDone.includes('Engine Oil and Filters')) Engine Oil and Filters
                 option(value="Gear Box Oil and Filters" selected=record.servicesDone.includes('Gear Box Oil and Filters')) Gear Box Oil and Filters
@@ -53,22 +73,24 @@ block content
                           i.bi.bi-trash
               
               button.btn.btn-outline-primary.btn-sm.mt-2(type="button", onclick="addPartRow()")
+
                 i.bi.bi-plus-circle.me-1
                 | Add Part/Oil
             
             .row.mb-4
               .col-md-6
-                label.form-label Assigned Technician(s) (Hold Ctrl/Cmd to select multiple)
+                label.form-label.fw-bold Assigned Technician(s) (Hold Ctrl/Cmd to select multiple)
                 select.form-select(name="technicians", multiple, required, size="3")
                   each tech in technicians
                     option(value=tech._id selected=record.technicians.some(t => t.toString() === tech._id.toString()))= tech.fullName
               .col-md-6
-                label.form-label Total Cost (UGX, Auto Calculated)
+                label.form-label.fw-bold Total Cost (UGX, Auto Calculated)
                 input#totalCostDisplay.form-control(type="number", readonly, value=record.totalCost)
 
-            .d-grid
-              button.btn.btn-primary.btn-lg(type="submit") Update Record
-              a.btn.btn-outline-secondary.btn-lg(href="/records") Cancel
+              .form-actions
+                a.btn-secondary(href='/technicians') Cancel
+                button.btn-primary(type='submit') Save Changes
+
 
   //- HIDDEN TEMPLATE FOR DYNAMIC ROWS
   template#part-row-template
@@ -82,6 +104,7 @@ block content
                 option(value=item._id data-price=(item.unitPrice || 0)) #{item.itemName} (In Stock: #{item.quantity})
       .col-md-3
         input.form-control(type="number", name="partQuantities", min="1", value="1", placeholder="Qty", required)
+
       .col-md-2
         button.btn.btn-danger.btn-sm.w-100(type="button", onclick="this.closest('.part-row').remove()")
           i.bi.bi-trash

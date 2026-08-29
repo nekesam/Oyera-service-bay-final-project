@@ -342,32 +342,6 @@ body {
     font-size: 12px;
 }
 
-.pagination {
-    display: flex;
-    gap: 6px;
-}
-
-.pagination button {
-    width: 31px;
-    height: 31px;
-    border: 1px solid #d5dce6;
-    border-radius: 6px;
-    background: #ffffff;
-    cursor: pointer;
-    color: #475569;
-}
-
-.pagination button:hover,
-.pagination button.active {
-    background: var(--primary);
-    border-color: var(--primary);
-    color: #ffffff;
-}
-
-.pagination button i {
-    font-size: 9px;
-}
-
 .service-sidebar {
     display: flex;
     flex-direction: column;
