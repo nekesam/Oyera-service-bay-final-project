@@ -28,7 +28,7 @@ block content
             | Register Customer
 
         section.customer-stats
-          article.customer-stat-card
+          article.customer-stat-card(data-href='/customers/records')
             .customer-stat-icon.blue
               i.fas.fa-users
             .customer-stat-content
@@ -38,7 +38,7 @@ block content
                 i.fas.fa-circle
                 | Registered customers
 
-          article.customer-stat-card
+          article.customer-stat-card(data-href='/customers/records?q=@')
             .customer-stat-icon.green
               i.fas.fa-envelope
             .customer-stat-content
@@ -48,7 +48,7 @@ block content
                 i.fas.fa-circle
                 | Reachable by email
 
-          article.customer-stat-card
+          article.customer-stat-card(data-href='/customers/records')
             .customer-stat-icon.orange
               i.fas.fa-phone
             .customer-stat-content
@@ -58,7 +58,7 @@ block content
                 i.fas.fa-circle
                 | Reachable by call
 
-          article.customer-stat-card
+          article.customer-stat-card(data-href='/customers/records')
             .customer-stat-icon.purple
               i.fas.fa-user-slash
             .customer-stat-content
@@ -94,7 +94,7 @@ block content
                     each record, index in records
                       - const fullName = `${record.firstName || ''} ${record.lastName || ''}`.trim() || 'Unknown Customer'
                       - const initials = fullName.split(' ').filter(Boolean).slice(0, 2).map((part) => part[0].toUpperCase()).join('') || '--'
-                      tr
+                      tr(data-href=`/customers/${record._id}`)
                         td= index + 1
                         td
                           .customer-name
@@ -108,6 +108,7 @@ block content
                         td= record.address || '-'
                         td
                           .table-actions
+                            a.action-link.view(href=`/customers/${record._id}`) View
                             a.action-link.edit(href=`/customers/edit/${record._id}`) Edit
                             form.action-form(action=`/customers/delete/${record._id}` method='POST' onsubmit="return confirm('Delete this customer?');")
                               button.action-btn.delete(type='submit') Delete
@@ -181,3 +182,7 @@ block content
         footer.page-footer
           span © 2026 Oyera Auto Service Bay Ltd. All rights reserved.
           span Professional care for every ride.
+
+block pageScripts
+  script(src='/js/tableSearch.js')
+  script(src='/js/cardLinks.js')

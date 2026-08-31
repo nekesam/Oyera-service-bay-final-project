@@ -29,7 +29,7 @@ block content
               | Register Stock
 
         section.stock-stats
-          article.stock-stat-card
+          article.stock-stat-card(data-href='/registerStock/stockList')
             .stock-stat-icon.blue
               i.fas.fa-boxes-stacked
             .stock-stat-content
@@ -39,7 +39,7 @@ block content
                 i.fas.fa-circle
                 | Registered items
 
-          article.stock-stat-card
+          article.stock-stat-card(data-href='/registerStock/stockList')
             .stock-stat-icon.green
               i.fas.fa-cubes
             .stock-stat-content
@@ -49,7 +49,7 @@ block content
                 i.fas.fa-circle
                 | Units available
 
-          article.stock-stat-card
+          article.stock-stat-card(data-href='/registerStock/stockList')
             .stock-stat-icon.orange
               i.fas.fa-triangle-exclamation
             .stock-stat-content
@@ -59,7 +59,7 @@ block content
                 i.fas.fa-circle
                 | Below threshold
 
-          article.stock-stat-card
+          article.stock-stat-card(data-href='/registerStock/stockList')
             .stock-stat-icon.purple
               i.fas.fa-layer-group
             .stock-stat-content
@@ -94,7 +94,7 @@ block content
                   if allStock.length
                     each stock, index in allStock
                       - const quantity = Number(stock.quantity) || 0
-                      tr
+                      tr(data-href=`/registerStock/stock/${stock._id}` data-filter=(quantity > 0 ? 'in stock' : 'out of stock'))
                         td= index + 1
                         td= new Date(stock.dateAdded || stock.createdAt).toLocaleDateString()
                         td= stock.itemName
@@ -104,13 +104,12 @@ block content
                         td
                           span.status-badge(class=quantity > 0 ? 'in-stock' : 'out-of-stock')= quantity > 0 ? 'In Stock' : 'Out of Stock'
                         td
-                          if canManageStock
-                            .table-actions
+                          .table-actions
+                            a.action-link.view(href=`/registerStock/stock/${stock._id}`) View
+                            if canManageStock
                               a.action-link.edit(href=`/registerStock/stock/edit/${stock._id}`) Edit
                               form.action-form(action=`/registerStock/stock/delete/${stock._id}` method='POST' onsubmit="return confirm('Are you sure you want to delete this stock item?');")
                                 button.action-btn.delete(type='submit') Delete
-                          else
-                            span.text-muted View only
                   else
                     tr
                       td(colspan='8') No stock available yet.
@@ -177,3 +176,7 @@ block content
         footer.page-footer
           span © 2026 Oyera Auto Service Bay Ltd. All rights reserved.
           span Professional care for every ride.
+
+block pageScripts
+  script(src='/js/tableSearch.js')
+  script(src='/js/cardLinks.js')

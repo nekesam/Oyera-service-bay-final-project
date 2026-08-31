@@ -1,0 +1,98 @@
+extends layout
+
+block headStyles
+  link(rel='stylesheet' href='/css/detail.css')
+
+block content
+  .main-container
+    - const activePage = 'services'
+    include partials/sidebar
+
+    main.content
+      .detail-page
+        - const customerName = record.customer ? `${record.customer.firstName || ''} ${record.customer.lastName || ''}`.trim() : 'Unknown Customer'
+        - const plate = record.vehicle ? record.vehicle.registrationNo : 'N/A'
+
+        .page-heading
+          .heading-left
+            .breadcrumb
+              a(href='/dashboard') Dashboard
+              i.fas.fa-chevron-right
+              a(href='/records') Services
+              i.fas.fa-chevron-right
+              span Service Record
+            h1 Service Record
+            p #{customerName} · #{plate} · #{new Date(record.date).toLocaleDateString()}
+
+          .detail-actions
+            a.detail-btn.ghost(href='/records')
+              i.fas.fa-arrow-left
+              | Back
+            a.detail-btn.primary(href=`/records/edit/${record._id}`)
+              i.fas.fa-pen
+              | Edit
+            form.action-form(action=`/records/delete/${record._id}` method='POST' onsubmit="return confirm('Delete this service record?');")
+              button.detail-btn.danger(type='submit')
+                i.fas.fa-trash
+                | Delete
+
+        .detail-shell
+          .detail-card
+            .detail-card__header
+              .detail-avatar
+                i.fas.fa-screwdriver-wrench
+              div
+                h2= customerName
+                span Serviced #{new Date(record.date).toLocaleDateString()}
+
+            .detail-grid
+              .detail-item
+                span Customer
+                strong
+                  if record.customer
+                    a(href=`/customers/${record.customer._id}`)= customerName
+                  else
+                    | Unknown Customer
+              .detail-item
+                span Vehicle
+                strong
+                  if record.vehicle
+                    a(href=`/vehicles/${record.vehicle._id}`)= plate
+                  else
+                    | N/A
+              .detail-item
+                span Phone
+                strong= record.customer ? (record.customer.phone || '—') : '—'
+              .detail-item
+                span Vehicle Name
+                strong= record.vehicle ? record.vehicle.vehicleName : '—'
+              .detail-item.full
+                span Services Performed
+                strong= (record.servicesDone || []).join(', ') || '—'
+              .detail-item.full
+                span Technicians
+                strong= (record.technicians || []).map((t) => t.fullName).filter(Boolean).join(', ') || '—'
+              .detail-item
+                span Labour Charge (UGX)
+                strong= Number(record.labourCharge || 0).toLocaleString()
+              .detail-item
+                span Total Cost (UGX)
+                strong= Number(record.totalCost || 0).toLocaleString()
+
+          .detail-sections
+            section.detail-section
+              h2 Parts and Oils Used
+              if record.partsUsed && record.partsUsed.length
+                .detail-table-wrap
+                  table.detail-table
+                    thead
+                      tr
+                        th Item
+                        th Quantity
+                    tbody
+                      each part in record.partsUsed
+                        tr
+                          td= part.itemName
+                          td= part.quantity
+              else
+                p.detail-empty No parts recorded for this service.

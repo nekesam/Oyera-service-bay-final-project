@@ -1,0 +1,102 @@
+extends layout
+
+block headStyles
+  link(rel='stylesheet' href='/css/detail.css')
+
+block content
+  .main-container
+    - const activePage = 'vehicles'
+    include partials/sidebar
+
+    main.content
+      .detail-page
+        .page-heading
+          .heading-left
+            .breadcrumb
+              a(href='/dashboard') Dashboard
+              i.fas.fa-chevron-right
+              a(href='/vehicles') Vehicles
+              i.fas.fa-chevron-right
+              span= vehicle.registrationNo
+            h1= vehicle.registrationNo
+            p Vehicle profile, owner details and full service history.
+
+          .detail-actions
+            a.detail-btn.ghost(href='/vehicles')
+              i.fas.fa-arrow-left
+              | Back
+            if permissions.canManageVehicles
+              a.detail-btn.primary(href=`/vehicles/edit/${vehicle._id}`)
+                i.fas.fa-pen
+                | Edit
+              form.action-form(action=`/vehicles/delete/${vehicle._id}` method='POST' onsubmit="return confirm('Delete this vehicle?');")
+                button.detail-btn.danger(type='submit')
+                  i.fas.fa-trash
+                  | Delete
+
+        .detail-shell
+          .detail-card
+            .detail-card__header
+              .detail-avatar
+                i.fas.fa-car
+              div
+                h2= vehicle.vehicleName
+                span= vehicle.vehicleTypeLabel
+
+            .detail-grid
+              .detail-item
+                span Registration Number
+                strong= vehicle.registrationNo
+              .detail-item
+                span Vehicle Name
+                strong= vehicle.vehicleName
+              .detail-item
+                span Owner Name
+                strong= vehicle.ownerName || '—'
+              .detail-item
+                span Colour
+                strong= vehicle.color || '—'
+              .detail-item
+                span Vehicle Type
+                strong= vehicle.vehicleTypeLabel
+              .detail-item
+                span Status
+                strong
+                  span.detail-badge(class=vehicle.status === 'Active' ? 'green' : 'amber')= vehicle.status
+              .detail-item
+                span Last Service
+                strong= vehicle.lastServiceDisplay
+              .detail-item
+                span Linked Customer
+                strong
+                  if customer
+                    a(href=`/customers/${customer._id}`)= `${customer.firstName || ''} ${customer.lastName || ''}`.trim()
+                  else
+                    | Not linked
+
+          .detail-sections
+            section.detail-section
+              h2 Service History
+              if services && services.length
+                .detail-table-wrap
+                  table.detail-table
+                    thead
+                      tr
+                        th Date
+                        th Customer
+                        th Services
+                        th Technicians
+                        th Total (UGX)
+                    tbody
+                      each record in services
+                        tr(data-href=`/records/${record._id}`)
+                          td= new Date(record.date).toLocaleDateString()
+                          td= record.customer ? `${record.customer.firstName} ${record.customer.lastName}` : '—'
+                          td= (record.servicesDone || []).join(', ')
+                          td= (record.technicians || []).map((t) => t.fullName).filter(Boolean).join(', ')
+                          td= Number(record.totalCost || 0).toLocaleString()
+              else
+                p.detail-empty No service records for this vehicle yet.
+
+block pageScripts
+  script(src='/js/cardLinks.js')

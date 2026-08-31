@@ -1,0 +1,120 @@
+extends layout
+
+block headStyles
+  link(rel='stylesheet' href='/css/searchResults.css')
+
+block content
+  .main-container
+    - const activePage = ''
+    include partials/sidebar
+
+    main.content
+      .search-page
+        .search-page-header
+          h1 Search Results
+          p
+            | Showing results for
+            |
+            strong "#{searchQuery}"
+
+        - const hasResults = (customers && customers.length) || (vehicles && vehicles.length) || (stockItems && stockItems.length) || (serviceRecords && serviceRecords.length) || (technicians && technicians.length)
+
+        if customers && customers.length
+          section.search-section
+            .section-header
+              h2
+                i.fa-solid.fa-users
+                |  Customers
+            .results-grid
+              each customer in customers
+                a.result-card(href=`/customers/${customer._id}`)
+                  .result-icon.customer-icon
+                    i.fa-solid.fa-user
+                  .result-content
+                    h3 #{customer.firstName} #{customer.lastName}
+                    if customer.phone
+                      p
+                        i.fa-solid.fa-phone
+                        |  #{customer.phone}
+                    if customer.email
+                      p
+                        i.fa-solid.fa-envelope
+                        |  #{customer.email}
+
+        if vehicles && vehicles.length
+          section.search-section
+            .section-header
+              h2
+                i.fa-solid.fa-car
+                |  Vehicles
+            .results-grid
+              each vehicle in vehicles
+                a.result-card(href=`/vehicles/${vehicle._id}`)
+                  .result-icon.vehicle-icon
+                    i.fa-solid.fa-car
+                  .result-content
+                    h3= vehicle.registrationNo
+                    if vehicle.vehicleName
+                      p= vehicle.vehicleName
+                    if vehicle.vehicleType
+                      p= vehicle.vehicleType
+
+        if stockItems && stockItems.length
+          section.search-section
+            .section-header
+              h2
+                i.fa-solid.fa-boxes-stacked
+                |  Stock
+            .results-grid
+              each stock in stockItems
+                a.result-card(href=`/registerStock/stock/${stock._id}`)
+                  .result-icon.stock-icon
+                    i.fa-solid.fa-box
+                  .result-content
+                    h3= stock.itemName
+                    p Quantity: #{stock.quantity || 0}
+                    p Unit Price: UGX #{Number(stock.unitPrice || 0).toLocaleString()}
+
+        if technicians && technicians.length
+          section.search-section
+            .section-header
+              h2
+                i.fa-solid.fa-user-gear
+                |  Technicians
+            .results-grid
+              each technician in technicians
+                a.result-card(href=`/technicians/${technician._id}`)
+                  .result-icon.service-icon
+                    i.fa-solid.fa-user-gear
+                  .result-content
+                    h3= technician.fullName
+                    if technician.role
+                      p= technician.role
+
+        if serviceRecords && serviceRecords.length
+          section.search-section
+            .section-header
+              h2
+                i.fa-solid.fa-screwdriver-wrench
+                |  Service Records
+            .results-grid
+              each record in serviceRecords
+                a.result-card(href=`/records/${record._id}`)
+                  .result-icon.service-icon
+                    i.fa-solid.fa-screwdriver-wrench
+                  .result-content
+                    if record.customer
+                      h3 #{record.customer.firstName} #{record.customer.lastName}
+                    if record.vehicle
+                      p Vehicle: #{record.vehicle.registrationNo}
+                    if record.servicesDone && record.servicesDone.length
+                      p Service: #{record.servicesDone.join(', ')}
+                    if record.date
+                      p Date: #{new Date(record.date).toLocaleDateString()}
+
+        if !hasResults
+          .no-results
+            i.fa-solid.fa-magnifying-glass
+            h2 No results found
+            p We couldn't find anything matching "#{searchQuery}".
+            a(href='/dashboard') Back to Dashboard

@@ -1,6 +1,7 @@
 extends layout
 
 block headStyles
+  link(rel='stylesheet' href='https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/css/tom-select.min.css')
   link(rel='stylesheet' href='/css/registerTechnician.css')
 
 block content
@@ -110,6 +111,7 @@ block content
           i.bi.bi-trash
 
   //- CLIENT-SIDE LOGIC
+  script(src='https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/js/tom-select.complete.min.js')
   script.
     const LABOUR_CHARGE = 20000;
     const SERVICE_PRICES = {
@@ -152,7 +154,22 @@ block content
       const template = document.getElementById('part-row-template');
       const clone = template.content.cloneNode(true);
       container.appendChild(clone);
+      const rows = container.querySelectorAll('.part-row');
+      const newSelect = rows[rows.length - 1].querySelector('select[name="partIds"]');
+      if (newSelect && window.TomSelect) {
+        new TomSelect(newSelect, { create: false, onChange: recalculateTotal });
+      }
       recalculateTotal();
+    }
+
+    function initSearchableSelects() {
+      if (!window.TomSelect) return;
+      document.querySelectorAll('select[name="servicesDone"], select[name="technicians"]').forEach((el) => {
+        new TomSelect(el, { plugins: ['remove_button'], create: false, hideSelected: false, onChange: recalculateTotal });
+      });
+      document.querySelectorAll('#parts-container .part-row select[name="partIds"]').forEach((el) => {
+        new TomSelect(el, { create: false, onChange: recalculateTotal });
+      });
     }
 
     document.addEventListener('change', (event) => {
@@ -174,6 +191,7 @@ block content
     });
 
     document.addEventListener('DOMContentLoaded', () => {
+      initSearchableSelects();
       const rows = document.querySelectorAll('#parts-container .part-row');
       if (rows.length === 0) addPartRow();
       recalculateTotal();

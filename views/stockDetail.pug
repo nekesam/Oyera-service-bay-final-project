@@ -1,0 +1,83 @@
+extends layout
+
+block headStyles
+  link(rel='stylesheet' href='/css/detail.css')
+
+block content
+  .main-container
+    - const activePage = 'inventory'
+    include partials/sidebar
+
+    main.content
+      .detail-page
+        - const quantity = Number(stock.quantity) || 0
+        - const unitPrice = Number(stock.unitPrice || stock.price || 0)
+
+        .page-heading
+          .heading-left
+            .breadcrumb
+              a(href='/dashboard') Dashboard
+              i.fas.fa-chevron-right
+              a(href='/registerStock/stockList') Stock
+              i.fas.fa-chevron-right
+              span= stock.itemName
+            h1= stock.itemName
+            p Inventory item details, pricing and stock levels.
+
+          .detail-actions
+            a.detail-btn.ghost(href='/registerStock/stockList')
+              i.fas.fa-arrow-left
+              | Back
+            if canManageStock
+              a.detail-btn.primary(href=`/registerStock/stock/edit/${stock._id}`)
+                i.fas.fa-pen
+                | Edit
+              form.action-form(action=`/registerStock/stock/delete/${stock._id}` method='POST' onsubmit="return confirm('Delete this stock item?');")
+                button.detail-btn.danger(type='submit')
+                  i.fas.fa-trash
+                  | Delete
+
+        .detail-shell.detail-shell--solo
+          .detail-card
+            .detail-card__header
+              .detail-avatar
+                i.fas.fa-box
+              div
+                h2= stock.itemName
+                span= stock.category || 'Uncategorised'
+
+            .detail-grid
+              .detail-item
+                span Stock ID
+                strong= stock.stockId || '—'
+              .detail-item
+                span Category
+                strong= stock.category || '—'
+              .detail-item
+                span Supplier
+                strong= stock.supplier || '—'
+              .detail-item
+                span Storage Location
+                strong= stock.storageLocation || '—'
+              .detail-item
+                span Unit
+                strong= stock.unit || '—'
+              .detail-item
+                span Unit Price (UGX)
+                strong= unitPrice.toLocaleString()
+              .detail-item
+                span Quantity In Stock
+                strong= quantity
+              .detail-item
+                span Status
+                strong
+                  span.detail-badge(class=quantity > 0 ? 'green' : 'amber')= quantity > 0 ? 'In Stock' : 'Out of Stock'
+              .detail-item
+                span Date Received
+                strong= stock.date ? new Date(stock.date).toLocaleDateString() : (stock.createdAt ? new Date(stock.createdAt).toLocaleDateString() : '—')
+              .detail-item
+                span Registered By
+                strong= stock.registeredBy ? stock.registeredBy.fullName : '—'
+              .detail-item.full
+                span Description
+                strong= stock.description || '—'

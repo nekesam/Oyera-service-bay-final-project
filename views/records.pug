@@ -30,7 +30,7 @@ block content
             | Add Service
 
         section.service-stats
-          article.service-stat-card
+          article.service-stat-card(data-href='/records')
             .service-stat-icon.blue
               i.fas.fa-clipboard-list
             .service-stat-content
@@ -40,7 +40,7 @@ block content
                 i.fas.fa-circle
                 | Captured services
 
-          article.service-stat-card
+          article.service-stat-card(data-href='/records')
             .service-stat-icon.green
               i.fas.fa-calendar-day
             .service-stat-content
@@ -50,7 +50,7 @@ block content
                 i.fas.fa-circle
                 | Today
 
-          article.service-stat-card
+          article.service-stat-card(data-href='/customers/records')
             .service-stat-icon.orange
               i.fas.fa-users
             .service-stat-content
@@ -60,7 +60,7 @@ block content
                 i.fas.fa-circle
                 | Served customers
 
-          article.service-stat-card
+          article.service-stat-card(data-href='/records')
             .service-stat-icon.purple
               i.fas.fa-coins
             .service-stat-content
@@ -95,7 +95,7 @@ block content
                 tbody
                   if records.length
                     each record, index in records
-                      tr
+                      tr(data-href=`/records/${record._id}`)
                         td= index + 1
                         td= new Date(record.date).toLocaleDateString()
                         td
@@ -113,6 +113,7 @@ block content
                         td= (Number(record.totalCost) || 0).toLocaleString()
                         td
                           .table-actions
+                            a.action-link.view(href=`/records/${record._id}`) View
                             a.action-link.edit(href=`/records/edit/${record._id}`) Edit
                             form.action-form(action=`/records/delete/${record._id}` method='POST' onsubmit="return confirm('Delete this service record?');")
                               button.action-btn.delete(type='submit') Delete
@@ -135,13 +136,14 @@ block content
                   span Add a new service record
                 i.fas.fa-chevron-right
 
-              a.quick-action(href='/registerStock/inventory')
-                .quick-icon.green
-                  i.fas.fa-boxes-stacked
-                .quick-text
-                  strong Register Stock
-                  span Add inventory item
-                i.fas.fa-chevron-right
+              if typeof permissions === 'undefined' || permissions.canManageStock
+                a.quick-action(href='/registerStock/inventory')
+                  .quick-icon.green
+                    i.fas.fa-boxes-stacked
+                  .quick-text
+                    strong Register Stock
+                    span Add inventory item
+                  i.fas.fa-chevron-right
 
               a.quick-action(href='/technicians')
                 .quick-icon.orange
@@ -181,3 +183,7 @@ block content
         footer.page-footer
           span © 2026 Oyera Auto Service Bay Ltd. All rights reserved.
           span Professional care for every ride.
+
+block pageScripts
+  script(src='/js/tableSearch.js')
+  script(src='/js/cardLinks.js')

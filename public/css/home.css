@@ -1,0 +1,1045 @@
+
+/* =========================================================
+   GENERAL RESET
+   ========================================================= */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: "Inter", Arial, sans-serif;
+  color: #10213f;
+  background: #f6f8fc;
+  min-height: 100vh;
+}
+
+a {
+  text-decoration: none;
+}
+
+button,
+input {
+  font-family: inherit;
+}
+
+
+/* =========================================================
+   HERO SECTION
+   ========================================================= */
+
+.hero {
+  min-height: 650px;
+
+  position: relative;
+
+  color: #ffffff;
+
+  /*
+   * Extra bottom space keeps the Login and
+   * Explore Features buttons above the statistics.
+   */
+  padding: 60px 6.5% 155px;
+
+  overflow: hidden;
+}
+
+
+/* Hero background */
+
+.hero-bg {
+  position: absolute;
+  inset: 0;
+
+  background-image: url("/images/bg-index.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+
+/* Dark overlay */
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(4, 27, 61, 0.98) 0%,
+      rgba(4, 27, 61, 0.92) 35%,
+      rgba(4, 27, 61, 0.62) 66%,
+      rgba(4, 27, 61, 0.67) 100%
+    );
+}
+
+
+/* =========================================================
+   HERO CONTENT
+   ========================================================= */
+
+.hero-content {
+  position: relative;
+
+  z-index: 5;
+
+  max-width: 650px;
+}
+
+
+/* =========================================================
+   LOGO
+   ========================================================= */
+
+/*
+ * Your Pug has:
+ *
+ * .hero-content.hero-logo
+ *
+ * Therefore the logo and hero content share the
+ * same container.
+ */
+
+.hero-logo {
+  text-align: left;
+}
+
+
+/*
+ * IMPORTANT:
+ * margin-left: 0 makes the logo begin on exactly
+ * the same left edge as "Welcome to".
+ */
+
+.hero-logo img {
+  width: 220px;
+  height: auto;
+
+  max-width: 100%;
+
+  display: block;
+
+  margin-left: 0;
+  margin-right: 0;
+  margin-top: 0;
+  margin-bottom: 18px;
+}
+
+
+/* Yellow line underneath the logo */
+
+.hero-logo > .yellow-line:first-of-type {
+  width: 51px;
+  height: 4px;
+
+  background: #f7c52d;
+
+  border-radius: 5px;
+
+  margin: 0 0 22px 0;
+}
+
+
+/* =========================================================
+   WELCOME TEXT
+   ========================================================= */
+
+.welcome {
+  font-size: 23px;
+
+  font-weight: 400;
+
+  margin-bottom: 5px;
+
+  color: #ffffff;
+}
+
+
+/* Main heading */
+
+.hero-content h2 {
+  font-size: 52px;
+
+  line-height: 1.15;
+
+  font-weight: 700;
+
+  letter-spacing: -1.4px;
+
+  color: #ffffff;
+}
+
+
+/* Yellow line underneath heading */
+
+.hero-content > .yellow-line {
+  width: 51px;
+  height: 4px;
+
+  background: #f7c52d;
+
+  border-radius: 5px;
+
+  margin: 23px 0 26px 0;
+}
+
+
+/* =========================================================
+   HERO DESCRIPTION
+   ========================================================= */
+
+.hero-description {
+  max-width: 550px;
+
+  font-size: 16px;
+
+  line-height: 1.75;
+
+  color: #f2f5fa;
+
+  margin-bottom: 23px;
+}
+
+
+/* =========================================================
+   HERO BUTTONS
+   ========================================================= */
+
+.hero-buttons {
+  display: flex;
+
+  align-items: center;
+
+  gap: 20px;
+
+  /*
+   * Keeps buttons above the statistics layer.
+   */
+  position: relative;
+
+  z-index: 10;
+}
+
+
+/* General button */
+
+.btn {
+  height: 51px;
+
+  display: inline-flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 11px;
+
+  padding: 0 20px;
+
+  border-radius: 5px;
+
+  font-size: 14px;
+
+  font-weight: 600;
+
+  transition: 0.2s ease;
+
+  cursor: pointer;
+
+  position: relative;
+
+  z-index: 10;
+}
+
+
+/* Button icons */
+
+.btn i {
+  font-size: 16px;
+}
+
+
+/* Login */
+
+.btn-login {
+  background-color: #f9c74f;
+
+  color: #000000;
+
+  border: 2px solid #f9c74f;
+}
+
+.btn-login:hover {
+  background-color: #e9b83f;
+
+  color: #000000;
+}
+
+
+/* Explore Features */
+
+.btn-features {
+  background-color: #0d6efd;
+
+  color: #ffffff;
+
+  border: 2px solid #0d6efd;
+}
+
+.btn-features:hover {
+  background-color: #0b5ed7;
+
+  color: #ffffff;
+}
+
+
+/* =========================================================
+   STATISTICS SECTION
+   ========================================================= */
+
+.statistics {
+  position: absolute;
+
+  z-index: 3;
+
+  left: 6.5%;
+  right: 6.5%;
+
+  bottom: 19px;
+
+  min-height: 90px;
+
+  display: flex;
+
+  align-items: center;
+
+  padding: 0 31px;
+
+  background: rgba(19, 47, 86, 0.78);
+
+  border: 1px solid rgba(255, 255, 255, 0.05);
+
+  border-radius: 7px;
+
+  backdrop-filter: blur(4px);
+}
+
+
+/* Statistics item */
+
+.stat-item {
+  flex: 1;
+
+  display: flex;
+  align-items: center;
+
+  gap: 18px;
+
+  color: #ffffff;
+
+  position: relative;
+  z-index: 4;
+
+  padding: 12px 14px;
+
+  border-radius: 8px;
+
+  transition:
+    transform 0.25s ease,
+    background-color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+
+/* Statistics card hover effect */
+
+.stat-item:hover {
+  transform: translateY(-5px);
+
+  background: rgba(255, 255, 255, 0.10);
+
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+
+  color: #ffffff;
+}
+
+
+/* Make the icon react when the card is hovered */
+
+.stat-item:hover .stat-icon {
+  transform: scale(1.08);
+
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.20);
+}
+
+
+/* Smooth icon animation */
+
+.stat-icon {
+  width: 46px;
+  height: 46px;
+
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 9px;
+
+  color: #ffffff;
+
+  font-size: 20px;
+
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+
+/* Keep statistics text white when hovering */
+
+.stat-item:hover .stat-text strong,
+.stat-item:hover .stat-text span {
+  color: #ffffff;
+}
+
+
+/* Statistics divider */
+
+.stat-divider {
+  width: 1px;
+
+  height: 48px;
+
+  background: rgba(255, 255, 255, 0.2);
+
+  margin: 0 30px;
+
+  flex-shrink: 0;
+}
+
+
+/* Statistics icons */
+
+.stat-icon {
+  width: 46px;
+  height: 46px;
+
+  flex-shrink: 0;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  border-radius: 9px;
+
+  color: #ffffff;
+
+  font-size: 20px;
+}
+
+
+/* Individual icon backgrounds */
+
+.stat-blue {
+  background: linear-gradient(
+    135deg,
+    #5266ee,
+    #2f52dc
+  );
+}
+
+.stat-green {
+  background: linear-gradient(
+    135deg,
+    #3ab269,
+    #14964e
+  );
+}
+
+.stat-yellow {
+  background: linear-gradient(
+    135deg,
+    #f4c638,
+    #dda90a
+  );
+}
+
+.stat-purple {
+  background: linear-gradient(
+    135deg,
+    #9c54d8,
+    #7a36b7
+  );
+}
+
+
+/* Statistics text */
+
+.stat-text {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 3px;
+}
+
+.stat-text span {
+  font-size: 14px;
+
+  color: #f0f3f8;
+}
+
+.stat-text strong {
+  font-size: 25px;
+
+  color: #ffffff;
+
+  font-weight: 700;
+}
+
+
+/* =========================================================
+   FEATURES SECTION
+   ========================================================= */
+
+.features {
+  min-height: 350px;
+
+  padding: 40px 7.2%;
+
+  background: #f7f9fc;
+
+  display: grid;
+
+  grid-template-columns: repeat(3, 1fr);
+
+  gap: 29px;
+}
+
+
+/* Feature card */
+
+.feature-card {
+  min-height: 274px;
+
+  background: #ffffff;
+
+  border-radius: 11px;
+
+  padding: 31px 32px;
+
+  box-shadow:
+    0 3px 15px rgba(30, 54, 90, 0.07);
+
+  border: 1px solid #eef1f5;
+
+  display: flex;
+
+  flex-direction: column;
+}
+
+
+/* Feature heading */
+
+.feature-heading {
+  display: flex;
+
+  align-items: center;
+
+  gap: 19px;
+}
+
+
+/* Feature icon */
+
+.feature-icon {
+  width: 62px;
+  height: 62px;
+
+  flex-shrink: 0;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  border-radius: 50%;
+
+  font-size: 23px;
+}
+
+
+/* Icon colors */
+
+.icon-blue {
+  color: #1e5be1;
+
+  background: #eaf1ff;
+}
+
+.icon-green {
+  color: #2a9b58;
+
+  background: #e9f7ef;
+}
+
+.icon-red {
+  color: #e23c43;
+
+  background: #fdecef;
+}
+
+
+/* =========================================================
+   FEATURE TITLES
+   ========================================================= */
+
+.feature-title {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 12px;
+}
+
+.feature-title h3 {
+  font-size: 17px;
+
+  font-weight: 700;
+
+  color: #10213f;
+}
+
+
+/* Small line */
+
+.small-line {
+  width: 36px;
+
+  height: 3px;
+
+  border-radius: 3px;
+}
+
+.line-blue {
+  background: #1265e5;
+}
+
+.line-green {
+  background: #299b58;
+}
+
+.line-red {
+  background: #db3038;
+}
+
+
+/* =========================================================
+   FEATURE PARAGRAPH
+   ========================================================= */
+
+.feature-card p {
+  color: #2e3d52;
+
+  font-size: 13.5px;
+
+  line-height: 1.8;
+
+  margin-top: 22px;
+
+  max-width: 360px;
+}
+
+
+/* =========================================================
+   LEARN MORE BUTTONS
+   ========================================================= */
+
+.learn-more {
+  width: fit-content;
+
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  padding: 10px 15px;
+
+  border-radius: 4px;
+
+  margin-top: auto;
+
+  color: #ffffff;
+
+  font-size: 12px;
+
+  font-weight: 500;
+
+  transition: 0.2s ease;
+}
+
+.learn-more i {
+  font-size: 11px;
+}
+
+
+/* Learn more colors */
+
+.learn-blue {
+  background: #1265e5;
+}
+
+.learn-green {
+  background: #299b58;
+}
+
+.learn-red {
+  background: #dc3038;
+}
+
+
+/* Hover effects */
+
+.learn-blue:hover {
+  background: #0757ca;
+}
+
+.learn-green:hover {
+  background: #218348;
+}
+
+.learn-red:hover {
+  background: #c3242d;
+}
+
+
+/* =========================================================
+   FOOTER
+   ========================================================= */
+
+.footer {
+  min-height: 63px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #1E3A5F 0%,
+      #1769e8 100%
+    );
+
+  border-top: 1px solid rgba(255, 255, 255, 0.22);
+
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 -8px 24px rgba(15, 23, 42, 0.12);
+
+  color: #ffffff;
+
+  padding: 0 6.5%;
+}
+
+.footer-content {
+  min-height: 63px;
+
+  display: flex;
+
+  align-items: center;
+
+  font-size: 12px;
+}
+
+.footer-content > p:first-child {
+  margin-right: auto;
+}
+
+.footer-tagline {
+  margin-right: 29px;
+}
+
+.social-links {
+  display: flex;
+
+  align-items: center;
+
+  gap: 22px;
+}
+
+.social-links a {
+  color: #ffffff;
+
+  font-size: 15px;
+
+  transition: 0.2s ease;
+}
+
+.social-links a:hover {
+  opacity: 0.7;
+}
+
+
+/* =========================================================
+   RESPONSIVE DESIGN
+   ========================================================= */
+
+
+/* ---------------------------------------------------------
+   LARGE TABLETS / SMALL LAPTOPS
+   --------------------------------------------------------- */
+
+@media (max-width: 1200px) {
+
+  .hero {
+    padding-left: 5%;
+
+    padding-right: 5%;
+
+    padding-bottom: 155px;
+  }
+
+  .statistics {
+    left: 5%;
+
+    right: 5%;
+  }
+
+  .features {
+    padding-left: 5%;
+
+    padding-right: 5%;
+  }
+}
+
+
+/* ---------------------------------------------------------
+   TABLETS
+   --------------------------------------------------------- */
+
+@media (max-width: 950px) {
+
+  .hero {
+    min-height: 720px;
+
+    padding-top: 55px;
+
+    padding-left: 7%;
+
+    padding-right: 7%;
+
+    padding-bottom: 170px;
+  }
+
+
+  /* Smaller logo */
+
+  .hero-logo img {
+    width: 200px;
+
+    margin-left: 0;
+  }
+
+
+  /* Smaller heading */
+
+  .hero-content h2 {
+    font-size: 42px;
+  }
+
+
+  /* Statistics become a grid */
+
+  .statistics {
+    height: auto;
+
+    min-height: 130px;
+
+    padding: 20px;
+
+    display: grid;
+
+    grid-template-columns: repeat(2, 1fr);
+
+    gap: 20px;
+  }
+
+
+  /* Remove vertical dividers */
+
+  .stat-divider {
+    display: none;
+  }
+
+
+  /* Features */
+
+  .features {
+    grid-template-columns: 1fr;
+
+    padding: 35px 7%;
+  }
+
+  .feature-card {
+    min-height: 240px;
+  }
+}
+
+
+/* ---------------------------------------------------------
+   MOBILE DEVICES
+   --------------------------------------------------------- */
+
+@media (max-width: 600px) {
+
+  .hero {
+    min-height: 900px;
+
+    padding: 40px 22px 180px;
+
+    background-position: center;
+  }
+
+
+  /* Logo */
+
+  .hero-logo img {
+    width: 180px;
+
+    margin-left: 0;
+
+    margin-bottom: 16px;
+  }
+
+
+  /* Welcome text */
+
+  .welcome {
+    font-size: 18px;
+  }
+
+
+  /* Main heading */
+
+  .hero-content h2 {
+    font-size: 35px;
+  }
+
+
+  /* Description */
+
+  .hero-description {
+    font-size: 14px;
+
+    line-height: 1.7;
+  }
+
+
+  /* Buttons */
+
+  .hero-buttons {
+    flex-direction: column;
+
+    align-items: flex-start;
+
+    gap: 12px;
+  }
+
+  .btn {
+    width: 210px;
+  }
+
+
+  /* Statistics */
+
+  .statistics {
+    left: 22px;
+
+    right: 22px;
+
+    bottom: 18px;
+
+    min-height: 170px;
+
+    grid-template-columns: 1fr 1fr;
+
+    padding: 15px;
+
+    gap: 15px;
+  }
+
+
+  /* Statistics items */
+
+  .stat-item {
+    gap: 9px;
+  }
+
+
+  /* Statistics icons */
+
+  .stat-icon {
+    width: 38px;
+
+    height: 38px;
+
+    font-size: 15px;
+  }
+
+
+  /* Statistics text */
+
+  .stat-text span {
+    font-size: 10px;
+  }
+
+  .stat-text strong {
+    font-size: 17px;
+  }
+
+
+  /* Features */
+
+  .features {
+    padding: 25px 18px;
+
+    gap: 20px;
+  }
+
+  .feature-card {
+    padding: 25px 22px;
+  }
+
+
+  /* Footer */
+
+  .footer {
+    padding: 18px;
+  }
+
+  .footer-content {
+    flex-direction: column;
+
+    gap: 15px;
+
+    text-align: center;
+  }
+
+  .footer-content > p:first-child {
+    margin-right: 0;
+  }
+
+  .footer-tagline {
+    margin-right: 0;
+  }
+}

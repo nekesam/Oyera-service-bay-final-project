@@ -1,0 +1,86 @@
+extends layout
+
+block headStyles
+  link(rel='stylesheet' href='/css/detail.css')
+
+block content
+  .main-container
+    - const activePage = 'technicians'
+    include partials/sidebar
+
+    main.content
+      .detail-page
+        .page-heading
+          .heading-left
+            .breadcrumb
+              a(href='/dashboard') Dashboard
+              i.fas.fa-chevron-right
+              a(href='/technicians') Technicians
+              i.fas.fa-chevron-right
+              span= technician.fullName
+            h1= technician.fullName
+            p Technician profile, role and recent job assignments.
+
+          .detail-actions
+            a.detail-btn.ghost(href='/technicians')
+              i.fas.fa-arrow-left
+              | Back
+            if permissions.showTechnicians
+              a.detail-btn.primary(href=`/technicians/edit/${technician._id}`)
+                i.fas.fa-pen
+                | Edit
+
+        .detail-shell
+          .detail-card
+            .detail-card__header
+              .detail-avatar= technician.initials
+              div
+                h2= technician.fullName
+                span= technician.role
+
+            .detail-grid
+              .detail-item
+                span Full Name
+                strong= technician.fullName
+              .detail-item
+                span Role
+                strong= technician.role
+              .detail-item
+                span Email
+                strong= technician.email || '—'
+              .detail-item
+                span Phone
+                strong= technician.phone || '—'
+              .detail-item
+                span Total Jobs (recent)
+                strong= stats.totalJobs
+              .detail-item
+                span Jobs This Month
+                strong= stats.jobsThisMonth
+
+          .detail-sections
+            section.detail-section
+              h2 Recent Job Assignments
+              if services && services.length
+                .detail-table-wrap
+                  table.detail-table
+                    thead
+                      tr
+                        th Date
+                        th Customer
+                        th Vehicle
+                        th Services
+                        th Total (UGX)
+                    tbody
+                      each record in services
+                        tr(data-href=`/records/${record._id}`)
+                          td= new Date(record.date).toLocaleDateString()
+                          td= record.customer ? `${record.customer.firstName} ${record.customer.lastName}` : '—'
+                          td= record.vehicle ? record.vehicle.registrationNo : '—'
+                          td= (record.servicesDone || []).join(', ')
+                          td= Number(record.totalCost || 0).toLocaleString()
+              else
+                p.detail-empty No job assignments recorded yet.
+
+block pageScripts
+  script(src='/js/cardLinks.js')

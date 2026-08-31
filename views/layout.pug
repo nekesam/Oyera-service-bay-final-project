@@ -45,7 +45,7 @@ html(lang='en')
 
         a.brand(href='/')
           img(
-            src='/images/service-logo.png'
+            src='/images/bay-logo.png'
             alt='Oyera Auto Service Bay'
           )
 
@@ -60,7 +60,7 @@ html(lang='en')
 
       .nav-center
 
-        form.global-search(action='#' method='get')
+        form.global-search(action='/search' method='get')
 
           .search-icon
             i.fa-solid.fa-magnifying-glass
@@ -161,7 +161,7 @@ html(lang='en')
               else
                 strong Admin
 
-              span Administrator
+              span Profile
 
             i.fa-solid.fa-chevron-down.profile-chevron
 
@@ -207,6 +207,12 @@ html(lang='en')
               span Logout
 
 
+    if flash && flash.message
+      .app-flash(class='app-flash--' + (flash.type || 'success') role='status')
+        i.app-flash__icon.fas(class=flash.type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-check')
+        span.app-flash__text= flash.message
+        button.app-flash__close(type='button' aria-label='Dismiss message') &times;
+
     //- Page Content
 
     main.page-wrapper
@@ -214,6 +220,19 @@ html(lang='en')
 
 
     block pageScripts
+
+    script.
+      (function () {
+        var flash = document.querySelector('.app-flash');
+        if (!flash) return;
+        var remove = function () {
+          flash.classList.add('app-flash--hide');
+          setTimeout(function () { flash.remove(); }, 300);
+        };
+        var closeBtn = flash.querySelector('.app-flash__close');
+        if (closeBtn) closeBtn.addEventListener('click', remove);
+        setTimeout(remove, 4500);
+      })();
 
     //- Navbar functionality
     script.

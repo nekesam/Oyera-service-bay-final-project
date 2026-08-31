@@ -4,7 +4,8 @@ block navConfig
   - var showNavbar = false
 
 block headStyles
-  link(rel='stylesheet' href='/css/index.css')
+  //-link(rel='stylesheet' href='/css/index.css')
+  link(rel='stylesheet' href='/css/home.css')
 
 block content
   main
@@ -12,7 +13,9 @@ block content
       .hero-bg
       .hero-overlay
 
-      .hero-content
+      .hero-content.hero-logo
+        img(src='/images/bay-logo.png' alt='Oyera Auto Service Bay Logo')
+        .yellow-line
         p.welcome Welcome to
         h2 Oyera Auto Service Bay
         .yellow-line
@@ -22,52 +25,52 @@ block content
           | efficiently manage customer, vehicle, service, technician, stock, and
           | business records in one place.
         .hero-buttons
-          a.btn.btn-login(href='/login')
+          //- a.btn.btn-login(href='/login')
+          //-   i.fa-solid.fa-right-to-bracket
+          //-   | Login
+
+          a.btn.btn-features(href='/login')
             i.fa-solid.fa-right-to-bracket
-            | Login
+            | Login to Dashboard
 
-          a.btn.btn-features(href='#features')
-            i.fa-solid.fa-screwdriver-wrench
-            | Explore Features
+      .statistics
+        a.stat-item(href='/customers/records')
+          .stat-icon.stat-blue
+           i.fa-solid.fa-users
 
-      //-  .statistics
-      //-    .stat-item
-      //-      .stat-icon.stat-blue
-      //-      i.fa-solid.fa-users
+          .stat-text
+            strong Customers
+            span Manage customer information.
 
-      //-    .stat-text
-      //-      span Happy Customers
-      //-      strong 1,250+
+        .stat-divider
 
-      //-    .stat-divider
+        a.stat-item(href='/service-records')
+          .stat-icon.stat-green
+            i.fa-solid.fa-wrench
 
-      //-    .stat-item
-      //-      .stat-icon.stat-green
-      //-        i.fa-solid.fa-wrench
+          .stat-text
+            strong Services
+            span Manage service information efficiently.
 
-      //-    .stat-text
-      //-      span Services Completed
-      //-      strong 3,800+
+        .stat-divider
 
-      //-    .stat-divider
+        a.stat-item(href='/vehicles/records')
+          .stat-icon.stat-yellow
+            i.fa-solid.fa-car
 
-      //-    .stat-item
-      //-      .stat-icon.stat-yellow
-      //-        i.fa-solid.fa-car
+          .stat-text
+            strong Vehicles
+            span Manage vehicle information.
 
-      //-    .stat-text
-      //-      span Vehicles Serviced
-      //-      strong 2,150+
+        .stat-divider
 
-      //-    .stat-divider
+        a.stat-item(href='/registerStock/stockList')
+          .stat-icon.stat-purple
+            i.fa-regular.fa-calendar-days
 
-      //-    .stat-item
-      //-      .stat-icon.stat-purple
-      //-        i.fa-regular.fa-calendar-days
-
-      //-    .stat-text
-      //-      span Years of Excellence
-      //-      strong 5+
+          .stat-text
+            strong Stock
+            span Manage stock information.
 
     section.features
       .feature-card.customer-card

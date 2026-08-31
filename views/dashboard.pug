@@ -16,20 +16,61 @@ block content
         //- Top Header Section
         header.page-header
           .page-header-left
-            h1 Welcome back, #{user ? user.role : 'User'}! 👋
+
+            h1 Welcome back, #{user ? user.role : 'User'}!
+
+            .welcome-user-info
+              .welcome-user-icon
+                i.fas.fa-user
+
+              .welcome-user-details
+                span#currentDateTime
+                span.welcome-user-name
+                  | #{user && user.fullName ? user.fullName : 'User'}
             p Here's what's happening at Oyera Auto Service Bay today.
+
+          //- Quick Actions Section
+        section.quick-actions
+
+            h5 QUICK OPERATIONS
+
+            .actions-grid
+
+              if !permissions || permissions.showCustomers
+                a.action-card.tone-blue(href="/customers/register")
+                  i.fas.fa-user-plus
+                  span Register Customer
+
+              if !permissions || permissions.canManageVehicles
+                a.action-card.tone-orange(href="/vehicles/register")
+                  i.fas.fa-car
+                  span Register Vehicle
+
+              a.action-card.tone-purple(href="/addRecord")
+                i.fas.fa-screwdriver-wrench
+                span Register Service
+
+              if !permissions || permissions.canManageStock
+                a.action-card.tone-green(href="/registerStock/inventory")
+                  i.fas.fa-boxes-stacked
+                  span Register Stock
+
+              a.action-card.tone-orange(href="/registerStock/stockList")
+                i.fas.fa-warehouse
+                span View Inventory
+
 
         //- Summary Cards
         section.dashboard-stats(aria-label="Dashboard Statistics")
 
-          article.stat-card
+          article.stat-card(data-href='/vehicles')
             .stat-icon.total
               i.fas.fa-car
             .card-content
               p.card-title Total Cars
-              h2#statCarsToday= dashboardStats && dashboardStats.totalCars !== undefined ? dashboardStats.totalCars : 0
+              h2#statTotalCars= dashboardStats && dashboardStats.totalCars !== undefined ? dashboardStats.totalCars : 0
 
-          article.stat-card
+          article.stat-card(data-href='/records')
             .stat-icon.revenue
               i.fas.fa-coins
             .card-content
@@ -37,14 +78,14 @@ block content
               h2#statRevenue
                 | UGX #{dashboardStats && dashboardStats.totalRevenue !== undefined ? Number(dashboardStats.totalRevenue).toLocaleString() : 0}
 
-          article.stat-card
+          article.stat-card(data-href='/records')
             .stat-icon.active-jobs
               i.fa-solid.fa-screwdriver-wrench
             .card-content
               p.card-title Active Jobs
               h2#statActiveJobs= dashboardStats && dashboardStats.activeJobs !== undefined ? dashboardStats.activeJobs : 0
 
-          article.stat-card
+          article.stat-card(data-href='/customers/records')
             .stat-icon.parts-sold
               i.fas.fa-users
             .card-content
@@ -54,14 +95,14 @@ block content
         //- Additional Dashboard Statistics
         section.dashboard-stats(aria-label="Additional Dashboard Statistics")
 
-          article.stat-card
+          article.stat-card(data-href='/records')
             .stat-icon.parts-sold
               i.fas.fa-boxes-stacked
             .card-content
               p.card-title Parts Sold
               h2#statAllPartsSold= dashboardStats && dashboardStats.partsSold !== undefined ? dashboardStats.partsSold : 0
 
-          article.stat-card
+          article.stat-card(data-href='/registerStock/stockList')
             .stat-icon.revenue
               i.fas.fa-warehouse
             .card-content
@@ -69,13 +110,19 @@ block content
               h2#statInventoryValue
                 | UGX #{dashboardStats && dashboardStats.inventoryValue !== undefined ? Number(dashboardStats.inventoryValue).toLocaleString() : 0}
 
-          article.stat-card
+          article.stat-card(data-href='/registerStock/stockList')
             .stat-icon.total
               i.fas.fa-layer-group
             .card-content
               p.card-title Total Stock Items
               h2#statTotalStockItems= dashboardStats && dashboardStats.totalStockItems !== undefined ? dashboardStats.totalStockItems : 0
 
+          article.stat-card(data-href='/vehicles')
+            .stat-icon.active-jobs
+              i.fas.fa-car-side
+            .card-content
+              p.card-title Cars Today
+              h2#statCarsToday= dashboardStats && dashboardStats.carsToday !== undefined ? dashboardStats.carsToday : 0
         //- Two Column Section
         .dashboard-grid
 
@@ -85,55 +132,43 @@ block content
             .card-header
               h2 Recent Service Records
               a(href="/records") View All
-              
-            table.table
-              thead
-                tr
-                  th Date
-                  th Customer Name
-                  th Car Number Plate
-                  th Service Offered
-                  th Technicians
-                  th Total Cost
 
-              tbody
-                if recentRecords && recentRecords.length
-                  each record in recentRecords
-                    tr
-
-                      //- Date
-                      td= new Date(record.date).toLocaleDateString()
-
-                      //- Customer Name
-                      td
-                        if record.customer
-                          | #{record.customer.firstName} #{record.customer.lastName}
-                        else
-                          | Unknown Customer
-
-                      //- Vehicle Registration Number
-                      td
-                        if record.vehicle
-                          | #{record.vehicle.registrationNo}
-                        else
-                          | Unknown Plate
-
-                      //- Services
-                      td= (record.servicesDone || []).join(', ')
-
-                      //- Technicians
-                      td
-                        if record.technicians && record.technicians.length
-                          = record.technicians.map(t => t.fullName || 'Unknown Technician').join(', ')
-                        else
-                          | No technician assigned
-
-                      //- Total Cost
-                      td= Number(record.totalCost || 0).toLocaleString()
-
-                else
+            .table-responsive
+              table.table
+                thead
                   tr
-                    td.text-center.text-muted(colspan='6') No service records yet.
+                    th Date
+                    th Customer Name
+                    th Car Number Plate
+                    th Service Offered
+                    th Technicians
+                    th Total Cost
+
+                tbody
+                  if recentRecords && recentRecords.length
+                    each record in recentRecords
+                      tr(data-href=`/records/${record._id}`)
+                        td= new Date(record.date).toLocaleDateString()
+                        td
+                          if record.customer
+                            | #{record.customer.firstName} #{record.customer.lastName}
+                          else
+                            | Unknown Customer
+                        td
+                          if record.vehicle
+                            | #{record.vehicle.registrationNo}
+                          else
+                            | Unknown Plate
+                        td= (record.servicesDone || []).join(', ')
+                        td
+                          if record.technicians && record.technicians.length
+                            = record.technicians.map(t => t.fullName || 'Unknown Technician').join(', ')
+                          else
+                            | No technician assigned
+                        td= Number(record.totalCost || 0).toLocaleString()
+                  else
+                    tr
+                      td.text-center.text-muted(colspan='6') No service records yet.
 
           //- Recent Stock List
           section.dashboard-card
@@ -142,56 +177,34 @@ block content
               h2 Recent Stock List
               a(href="/registerStock/stockList") View All
 
-            table.table
-              thead
-                tr
-                  th Date
-                  th Item
-                  th Quantity
-                  th Unit Price
-
-              tbody
-                if recentStockItems && recentStockItems.length
-                  each stock in recentStockItems
-                    tr
-                      td= new Date(stock.date || stock.createdAt).toLocaleDateString()
-                      td= stock.itemName
-                      td= stock.quantity !== undefined && stock.quantity !== null ? stock.quantity : 0
-                      td= Number(stock.unitPrice || 0).toLocaleString()
-
-                else
+            .table-responsive
+              table.table
+                thead
                   tr
-                    td.text-center.text-muted(colspan='4') No stock items yet.
+                    th Date
+                    th Item
+                    th Quantity
+                    th Unit Price
 
-        //- Quick Actions Section
-        section.quick-actions
+                tbody
+                  if recentStockItems && recentStockItems.length
+                    each stock in recentStockItems
+                      tr(data-href=`/registerStock/stock/${stock._id}`)
+                        td= new Date(stock.date || stock.createdAt).toLocaleDateString()
+                        td= stock.itemName
+                        td= stock.quantity !== undefined && stock.quantity !== null ? stock.quantity : 0
+                        td= Number(stock.unitPrice || 0).toLocaleString()
+                  else
+                    tr
+                      td.text-center.text-muted(colspan='4') No stock items yet.
 
-          h2 Quick Actions
+        //- Footer
+        footer.page-footer
+          span © 2026 Oyera Auto Service Bay Ltd. All rights reserved.
+          span Professional care for every ride.
 
-          .actions-grid
-
-            a.action-card.tone-blue(href="/customers/register")
-              i.fas.fa-user-plus
-              span Register Customer
-
-            a.action-card.tone-orange(href="/vehicles/register")
-              i.fas.fa-car
-              span Register Vehicle
-
-            a.action-card.tone-purple(href="/addRecord")
-              i.fas.fa-screwdriver-wrench
-              span Register Service
-
-            a.action-card.tone-green(href="/registerStock/inventory")
-              i.fas.fa-boxes-stacked
-              span Register Stock
-
-            a.action-card.tone-orange(href="/registerStock/stockList")
-              i.fas.fa-warehouse
-              span View Inventory
 
 block pageScripts
-  script(src="/js/validation.js")
-  script(src="/js/store.js")
   script(src="/js/dashboard.js")
+  script(src="/js/cardLinks.js")
 

@@ -111,8 +111,8 @@ block content
                   thead
                     tr
                       th Date
-                      th Customer
-                      th Vehicle
+                      th Customer Name
+                      th car Number plate
                       th Service Performed
                       th Technician
                       th Parts Used
@@ -122,8 +122,8 @@ block content
                       each item in serviceReports
                         tr
                           td= item.date ? new Date(item.date).toLocaleDateString() : '-'
-                          td= item.customer
-                          td= item.vehicle
+                          td= item.customerName
+                          td= item.carNumberPlate
                           td= item.services
                           td= item.technician
                           td= item.partsUsed

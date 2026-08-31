@@ -16,6 +16,8 @@ block content
         section.records-card
           .records-header
             h2 System Users
+            .table-search
+              input(type='text' placeholder='Search users...')
           .table-wrapper
             table.records-table
               thead
@@ -28,15 +30,22 @@ block content
                   th Actions
               tbody
                 each record in records
-                  tr
+                  tr(data-href=`/registerUser/user/${record._id}`)
                     td.fw-bold= record.fullName
                     td= record.role
                     td= record.phoneNumber || record.phone || record.identifier || ''
                     td= record.email
                     td= record.password
                     td
-                      a.btn.btn-sm.btn-outline-primary.me-1(href =`/registerUser/user/edit/${record._id}`)
-                        i.bi.bi-pencil
-                      form.d-inline(action=`/registerUser/user/delete/${record._id}`, method ='post' onsubmit="return confirm('Are you sure you want to delete this user?');")
-                        button.btn.btn-sm.btn-danger(type ='submit')
-                          i.bi-trash
+                      .actions-cell
+                        a.btn.btn-sm.btn-outline-secondary.me-1(href=`/registerUser/user/${record._id}`)
+                          i.bi.bi-eye
+                        a.btn.btn-sm.btn-outline-primary.me-1(href =`/registerUser/user/edit/${record._id}`)
+                          i.bi.bi-pencil
+                        form.d-inline(action=`/registerUser/user/delete/${record._id}`, method ='post' onsubmit="return confirm('Are you sure you want to delete this user?');")
+                          button.btn.btn-sm.btn-danger(type ='submit')
+                            i.bi-trash
+
+block pageScripts
+  script(src='/js/tableSearch.js')
+  script(src='/js/cardLinks.js')

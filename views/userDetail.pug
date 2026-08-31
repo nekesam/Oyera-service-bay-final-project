@@ -1,0 +1,58 @@
+extends layout
+
+block headStyles
+  link(rel='stylesheet' href='/css/detail.css')
+
+block content
+  .main-container
+    - const activePage = 'technicians'
+    include partials/sidebar
+
+    main.content
+      .detail-page
+        .page-heading
+          .heading-left
+            .breadcrumb
+              a(href='/dashboard') Dashboard
+              i.fas.fa-chevron-right
+              a(href='/registerUser/userRecords') Users
+              i.fas.fa-chevron-right
+              span= profile.fullName
+            h1= profile.fullName
+            p System user account details.
+
+          .detail-actions
+            a.detail-btn.ghost(href='/registerUser/userRecords')
+              i.fas.fa-arrow-left
+              | Back
+            a.detail-btn.primary(href=`/registerUser/user/edit/${profile._id}`)
+              i.fas.fa-pen
+              | Edit
+
+        .detail-shell.detail-shell--solo
+          .detail-card
+            .detail-card__header
+              .detail-avatar= initials
+              div
+                h2= profile.fullName
+                span= profile.role
+
+            .detail-grid
+              .detail-item
+                span Full Name
+                strong= profile.fullName
+              .detail-item
+                span Role
+                strong= profile.role
+              .detail-item
+                span Email
+                strong= profile.email || '—'
+              .detail-item
+                span Phone
+                strong= profile.phone || '—'
+              .detail-item
+                span Created
+                strong= profile.createdAt ? new Date(profile.createdAt).toLocaleDateString() : '—'
+              .detail-item
+                span Last Updated
+                strong= profile.updatedAt ? new Date(profile.updatedAt).toLocaleDateString() : '—'

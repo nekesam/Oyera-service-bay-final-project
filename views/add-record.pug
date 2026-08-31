@@ -1,7 +1,9 @@
 extends layout
 
 block headStyles
+  link(rel='stylesheet' href='https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/css/tom-select.min.css')
   link(rel='stylesheet' href='/css/vehicles.css')
+  link(rel='stylesheet' href='/css/captureService.css')
 
 block content
   .main-container
@@ -24,7 +26,7 @@ block content
           if errorMessage
             .form-alert= errorMessage
 
-          .form-alert
+          .form-note
             strong Pricing Guide:
             | Engine Oil (UGX 79K-200K), Brake Fluid (UGX 13K-20K), Oil Filter (UGX 15K-20K), Alignment (UGX 30K), Balance (UGX 20K), Standard Labor (UGX 20K).
 
@@ -33,7 +35,7 @@ block content
               .form-field
                 label(for='customer') Customer Name
                 select#customer(name='customer' required)
-                  option(value='') Select Customer
+                  option(value='') Select customer
                   each customer in customers
                     - const customerFullName = `${customer.firstName} ${customer.lastName}`.trim()
                     option(
@@ -43,16 +45,17 @@ block content
               .form-field
                 label(for='vehicle') Car Number Plate
                 select#vehicle(name='vehicle' required)
-                  option(value='') Select Vehicle
+                  option(value='') Select vehicle
                   each vehicle in vehicles
                     option(
                       value=vehicle._id
                       data-customer-id=vehicle.customerId
                       selected=formData && formData.vehicle === String(vehicle._id)
                     )= vehicle.registrationNo
-              .form-field
-                label(for='servicesDone') Services Performed (Hold Ctrl/Cmd to select multiple)
-                select#servicesDone(name='servicesDone' multiple required size='5')
+
+              .form-field.span-2
+                label(for='servicesDone') Services Performed
+                select#servicesDone(name='servicesDone' multiple required)
                   option(value='Engine Oil and Filters' selected=formData && formData.servicesDone && formData.servicesDone.includes('Engine Oil and Filters')) Engine Oil and Filters
                   option(value='Gear Box Oil and Filters' selected=formData && formData.servicesDone && formData.servicesDone.includes('Gear Box Oil and Filters')) Gear Box Oil and Filters
                   option(value='Brake Fluids' selected=formData && formData.servicesDone && formData.servicesDone.includes('Brake Fluids')) Brake Fluids
@@ -62,19 +65,20 @@ block content
                   option(value='Wheel Alignment' selected=formData && formData.servicesDone && formData.servicesDone.includes('Wheel Alignment')) Wheel Alignment
                   option(value='Wheel Balance' selected=formData && formData.servicesDone && formData.servicesDone.includes('Wheel Balance')) Wheel Balance
 
-              .form-field
-                label(for='technicians') Assigned Technician(s) (Hold Ctrl/Cmd to select multiple)
-                select#technicians(name='technicians' multiple required size='5')
+              .form-field.span-2
+                label(for='technicians') Assigned Technician(s)
+                select#technicians(name='technicians' multiple required)
                   each tech in technicians
                     option(value=tech._id selected=formData && formData.technicians && formData.technicians.includes(String(tech._id)))= tech.fullName
 
-              .form-field
+              .form-field.span-2
                 label Parts & Oils Used
                 #parts-container
+                button.btn-add-part(type='button' onclick='addPartRow()')
+                  i.fas.fa-plus
+                  | Add Part / Oil
 
-                button.btn-secondary(type='button' onclick='addPartRow()') Add Part/Oil
-
-              .form-field
+              .form-field.total-field
                 label(for='totalCostDisplay') Total Cost (UGX, Auto Calculated)
                 input#totalCostDisplay(type='number' readonly value='20000')
 
@@ -82,22 +86,22 @@ block content
               a.btn-secondary(href='/service-records') Cancel
               button.btn-primary(type='submit') Save Record & Deduct Stock
 
-  //- HIDDEN TEMPLATE FOR DYNAMIC ROWS
   template#part-row-template
-    .part-row(style='display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) auto;gap:10px;margin-top:10px;')
-      div
-        select(name='partIds' required style='height:44px;border:1px solid #cbd5e1;border-radius:8px;padding:0 12px;width:100%;')
-          option(value="", disabled, selected) Select Item...
+    .part-row
+      .part-row__item
+        select(name='partIds' required)
+          option(value="", disabled, selected) Select item...
           each items, categoryName in stockByCategory
             optgroup(label=categoryName)
               each item in items
-                option(value=item._id data-price=(item.unitPrice || 0)) #{item.itemName} (In Stock: #{item.quantity})
-      div
-        input(type='number' name='partQuantities' min='1' value='1' placeholder='Qty' required style='height:44px;border:1px solid #cbd5e1;border-radius:8px;padding:0 12px;width:100%;')
-      div
-        button.btn-secondary(type='button' style='height:44px;' onclick="this.closest('.part-row').remove()") Remove
+                option(value=item._id data-price=(item.unitPrice || 0)) #{item.itemName} (In stock: #{item.quantity})
+      .part-row__qty
+        input(type='number' name='partQuantities' min='1' value='1' placeholder='Qty' required)
+      button.part-row__remove(type='button' onclick="this.closest('.part-row').remove()" aria-label='Remove part')
+        i.fas.fa-times
 
 block pageScripts
+  script(src='https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/js/tom-select.complete.min.js')
   script.
     const LABOUR_CHARGE = 20000;
 
@@ -157,7 +161,36 @@ block pageScripts
 
       container.appendChild(clone);
 
+      const rows = container.querySelectorAll('.part-row');
+      const newSelect = rows[rows.length - 1].querySelector('select[name="partIds"]');
+
+      if (newSelect && window.TomSelect) {
+        new TomSelect(newSelect, {
+          create: false,
+          onChange: recalculateTotal
+        });
+      }
+
       recalculateTotal();
+    }
+
+    function initSearchableSelects() {
+      if (!window.TomSelect) return;
+
+      new TomSelect('#customer', { create: false });
+
+      new TomSelect('#servicesDone', {
+        plugins: ['remove_button'],
+        create: false,
+        hideSelected: false,
+        onChange: recalculateTotal
+      });
+
+      new TomSelect('#technicians', {
+        plugins: ['remove_button'],
+        create: false,
+        hideSelected: false
+      });
     }
 
     document.addEventListener('change', (event) => {
@@ -190,9 +223,6 @@ block pageScripts
       }
     });
 
-
-    // CUSTOMER → VEHICLE FILTERING
-
     const customerSelect =
       document.getElementById('customer');
 
@@ -211,7 +241,6 @@ block pageScripts
       Array.from(vehicleSelect.options).forEach(
         (option, index) => {
 
-          // Keep "Select Vehicle" visible
           if (index === 0) {
             option.hidden = false;
             return;
@@ -233,20 +262,13 @@ block pageScripts
     }
 
     customerSelect?.addEventListener('change', () => {
-
       vehicleSelect.value = '';
-
       filterVehiclesByCustomer();
-
     });
 
-
     document.addEventListener('DOMContentLoaded', () => {
-
+      initSearchableSelects();
       addPartRow();
-
       recalculateTotal();
-
       filterVehiclesByCustomer();
-
     });

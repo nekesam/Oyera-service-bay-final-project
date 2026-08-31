@@ -26,14 +26,15 @@ block content
             h1 Vehicles
             p Manage vehicle records, owners, service history and vehicle information.
 
-          a.add-vehicle-btn(href='/vehicles/register')
-            i.fas.fa-plus
-            | Register Vehicle
+          if permissions.canManageVehicles
+            a.add-vehicle-btn(href='/vehicles/register')
+              i.fas.fa-plus
+              | Register Vehicle
 
         //- Statistics
         section.vehicle-stats
 
-          article.vehicle-stat-card
+          article.vehicle-stat-card(data-href='/vehicles')
 
             .vehicle-stat-icon.blue
               i.fas.fa-car
@@ -45,7 +46,7 @@ block content
                 i.fas.fa-circle
                 | Registered vehicles
 
-          article.vehicle-stat-card
+          article.vehicle-stat-card(data-href='/records')
 
             .vehicle-stat-icon.green
               i.fas.fa-screwdriver-wrench
@@ -57,7 +58,7 @@ block content
                 i.fas.fa-circle
                 | Vehicles today
 
-          article.vehicle-stat-card
+          article.vehicle-stat-card(data-href='/vehicles?type=small')
 
             .vehicle-stat-icon.orange
               i.fas.fa-car-side
@@ -69,7 +70,7 @@ block content
                 i.fas.fa-circle
                 | Registered
 
-          article.vehicle-stat-card
+          article.vehicle-stat-card(data-href='/vehicles?type=commercial')
 
             .vehicle-stat-icon.purple
               i.fas.fa-truck
@@ -123,7 +124,7 @@ block content
                 tbody
                   if vehicleRecords.length
                     each vehicle, index in vehicleRecords
-                      tr
+                      tr(data-href=`/vehicles/${vehicle._id}` data-filter=`${vehicle.vehicleType} ${vehicle.status}`)
                         td= index + 1
 
                         td
@@ -148,9 +149,11 @@ block content
 
                         td
                           .table-actions
-                            a.action-link.edit(href=`/vehicles/edit/${vehicle._id}`) Edit
-                            form.action-form(action=`/vehicles/delete/${vehicle._id}` method='POST' onsubmit="return confirm('Delete this vehicle?');")
-                              button.action-btn.delete(type='submit') Delete
+                            a.action-link.view(href=`/vehicles/${vehicle._id}`) View
+                            if permissions.canManageVehicles
+                              a.action-link.edit(href=`/vehicles/edit/${vehicle._id}`) Edit
+                              form.action-form(action=`/vehicles/delete/${vehicle._id}` method='POST' onsubmit="return confirm('Delete this vehicle?');")
+                                button.action-btn.delete(type='submit') Delete
                   else
                     tr
                       td(colspan='8') No vehicles found.
@@ -163,27 +166,29 @@ block content
 
               h2 Quick Actions
 
-              a.quick-action(href='/vehicles/register')
+              if permissions.canManageVehicles
+                a.quick-action(href='/vehicles/register')
 
-                .quick-icon.blue
-                  i.fas.fa-car
+                  .quick-icon.blue
+                    i.fas.fa-car
 
-                .quick-text
-                  strong Register Vehicle
-                  span Add a new vehicle record
+                  .quick-text
+                    strong Register Vehicle
+                    span Add a new vehicle record
 
-                i.fas.fa-chevron-right
+                  i.fas.fa-chevron-right
 
-              a.quick-action(href='/customers/register')
+              if permissions.showCustomers
+                a.quick-action(href='/customers/register')
 
-                .quick-icon.green
-                  i.fas.fa-user-plus
+                  .quick-icon.green
+                    i.fas.fa-user-plus
 
-                .quick-text
-                  strong Register Customer
-                  span Add vehicle owner
+                  .quick-text
+                    strong Register Customer
+                    span Add vehicle owner
 
-                i.fas.fa-chevron-right
+                  i.fas.fa-chevron-right
 
               a.quick-action(href='/addRecord')
 
@@ -242,4 +247,6 @@ block content
           span Professional care for every ride.
 
 block pageScripts
+  script(src='/js/tableSearch.js')
+  script(src='/js/cardLinks.js')
   

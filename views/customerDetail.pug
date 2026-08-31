@@ -1,0 +1,106 @@
+extends layout
+
+block headStyles
+  link(rel='stylesheet' href='/css/detail.css')
+
+block content
+  .main-container
+    - const activePage = 'customers'
+    include partials/sidebar
+
+    main.content
+      .detail-page
+        .page-heading
+          .heading-left
+            .breadcrumb
+              a(href='/dashboard') Dashboard
+              i.fas.fa-chevron-right
+              a(href='/customers/records') Customers
+              i.fas.fa-chevron-right
+              span= fullName
+            h1= fullName
+            p Full customer profile, registered vehicles and service history.
+
+          .detail-actions
+            a.detail-btn.ghost(href='/customers/records')
+              i.fas.fa-arrow-left
+              | Back
+            a.detail-btn.primary(href=`/customers/edit/${customer._id}`)
+              i.fas.fa-pen
+              | Edit
+
+        .detail-shell
+          .detail-card
+            .detail-card__header
+              .detail-avatar= initials
+              div
+                h2= fullName
+                span Customer Profile
+
+            .detail-grid
+              .detail-item
+                span Customer ID
+                strong= customer.customerId || '—'
+              .detail-item
+                span First Name
+                strong= customer.firstName || '—'
+              .detail-item
+                span Last Name
+                strong= customer.lastName || '—'
+              .detail-item
+                span Phone Number
+                strong= customer.phone || '—'
+              .detail-item
+                span Email Address
+                strong= customer.email || '—'
+              .detail-item
+                span Physical Address
+                strong= customer.address || '—'
+
+          .detail-sections
+            section.detail-section
+              h2 Registered Vehicles
+              if vehicles && vehicles.length
+                .detail-table-wrap
+                  table.detail-table
+                    thead
+                      tr
+                        th Registration No.
+                        th Vehicle
+                        th Type
+                        th Status
+                    tbody
+                      each vehicle in vehicles
+                        tr(data-href=`/vehicles/${vehicle._id}`)
+                          td= vehicle.registrationNo
+                          td= vehicle.vehicleName
+                          td= vehicle.vehicleType
+                          td= vehicle.status
+              else
+                p.detail-empty No vehicles linked to this customer.
+
+            section.detail-section
+              h2 Service History
+              if services && services.length
+                .detail-table-wrap
+                  table.detail-table
+                    thead
+                      tr
+                        th Date
+                        th Vehicle
+                        th Services
+                        th Technicians
+                        th Total (UGX)
+                    tbody
+                      each record in services
+                        tr(data-href=`/records/${record._id}`)
+                          td= new Date(record.date).toLocaleDateString()
+                          td= record.vehicle ? record.vehicle.registrationNo : '—'
+                          td= (record.servicesDone || []).join(', ')
+                          td= (record.technicians || []).map((t) => t.fullName).filter(Boolean).join(', ')
+                          td= Number(record.totalCost || 0).toLocaleString()
+              else
+                p.detail-empty No service records for this customer yet.
+
+block pageScripts
+  script(src='/js/cardLinks.js')
