@@ -2,6 +2,7 @@ import Vehicle from '../models/Vehicle.mjs';
 import ServiceRecord from '../models/ServiceRecord.mjs';
 import Customers from '../models/Customers.mjs';
 import { dashboardPermissionsByRole } from './dashboardControllers.mjs';
+import { setFlash } from '../utils/flash.mjs';
 
 const getRolePermissions = (role) => {
   return dashboardPermissionsByRole[role] || dashboardPermissionsByRole.Technician;
@@ -271,6 +272,7 @@ export const createVehicle = async (req, res) => {
 
     const vehicle = new Vehicle(payload);
     await vehicle.save();
+    setFlash(req, `Vehicle "${vehicle.registrationNo}" registered successfully.`);
     return res.redirect('/vehicles');
   } catch (error) {
     const permissions = getRolePermissions(req.session?.userRole);
@@ -384,6 +386,7 @@ export const updateVehicle = async (req, res) => {
       return res.status(404).send('Vehicle not found');
     }
 
+    setFlash(req, `Vehicle "${updatedVehicle.registrationNo}" updated successfully.`);
     return res.redirect('/vehicles');
   } catch (error) {
     const role = req.session?.userRole;
@@ -413,9 +416,44 @@ export const updateVehicle = async (req, res) => {
 export const deleteVehicle = async (req, res) => {
   try {
     await Vehicle.findByIdAndDelete(req.params.id);
+    setFlash(req, 'Vehicle deleted.');
     return res.redirect('/vehicles');
   } catch (error) {
     console.error('Error deleting vehicle:', error);
     return res.status(500).send('Error deleting vehicle');
+  }
+};
+
+export const getVehicleDetail = async (req, res) => {
+  try {
+    const vehicle = await Vehicle.findById(req.params.id).lean();
+    if (!vehicle) {
+      return res.status(404).send('Vehicle not found');
+    }
+
+    const [customer, services] = await Promise.all([
+      vehicle.customerId ? Customers.findById(vehicle.customerId).lean() : null,
+      ServiceRecord.find({ vehicle: vehicle._id })
+        .populate('customer', 'firstName lastName')
+        .populate('technicians', 'fullName')
+        .sort({ date: -1 })
+        .lean(),
+    ]);
+
+    const permissions = getRolePermissions(req.session?.userRole);
+
+    return res.render('vehicleDetail', {
+      vehicle: {
+        ...vehicle,
+        vehicleTypeLabel: vehicleTypeLabel[vehicle.vehicleType] || 'Small Vehicle',
+        lastServiceDisplay: formatDate(vehicle.lastService),
+      },
+      customer,
+      services,
+      permissions,
+    });
+  } catch (error) {
+    console.error('Error loading vehicle detail:', error);
+    return res.status(500).send('Error loading vehicle detail');
   }
 };

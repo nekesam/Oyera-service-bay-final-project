@@ -23,6 +23,7 @@ import vehicleRoutes from "./routes/vehicleRoutes.mjs";
 import serviceRoutes from "./routes/serviceRoutes.mjs";
 import technicianRoutes from "./routes/technicianRoutes.mjs";
 import reportsRoutes from "./routes/reportsRoutes.js";
+import searchRoutes from "./routes/searchRoutes.mjs";
 
 
 //2.Instantiations
@@ -63,6 +64,14 @@ app.use((req, res, next) =>{
     next();
 })
 
+app.use((req, res, next) => {
+    res.locals.flash = req.session?.flash || null;
+    if (req.session?.flash) {
+        delete req.session.flash;
+    }
+    next();
+})
+
 //Use imported Routes
 app.use("/registerStock", registerStockRoutes);
 app.use("/", authRoutes);
@@ -73,6 +82,7 @@ app.use("/vehicles", vehicleRoutes);
 app.use("/", serviceRoutes);
 app.use("/", technicianRoutes);
 app.use("/", reportsRoutes);
+app.use("/", searchRoutes);
 
 
 

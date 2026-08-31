@@ -1,5 +1,5 @@
 import express from "express";
-import { getStockPage, getStockRecordsPage, createStockItem, getStockForm, addStock, getAllStock, getEditStockForm, updateStock, deleteStock} from "../controllers/stockControllers.mjs";
+import { getStockPage, getStockRecordsPage, createStockItem, getStockForm, addStock, getAllStock, getEditStockForm, updateStock, deleteStock, getStockDetail} from "../controllers/stockControllers.mjs";
 import {isAuthenticated, isAdminOrSeniorTechnician} from '../middleware/auth.mjs';
 import { validateStock } from '../Validation/userValidation.mjs';
 
@@ -21,5 +21,7 @@ router.get('/stock/edit/:id', isAdminOrSeniorTechnician, getEditStockForm);
 router.post('/stock/edit/:id', isAdminOrSeniorTechnician, validateStock, updateStock);
 
 router.post('/stock/delete/:id', isAdminOrSeniorTechnician, deleteStock);
+
+router.get('/stock/:id', isAuthenticated, getStockDetail);
   
 export default router;

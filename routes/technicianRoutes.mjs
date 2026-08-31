@@ -8,6 +8,7 @@ import {
 	deleteTechnician,
 	getEditTechnicianForm,
 	updateTechnician,
+	getTechnicianDetail,
 } from '../controllers/technicianControllers.mjs';
 
 const router = express.Router();
@@ -25,5 +26,6 @@ router.post('/technicians/delete/:id', isAuthenticated, isAdmin, deleteTechnicia
 router.get('/technicians/assign', isAuthenticated, (req, res) => res.redirect('/addRecord'));
 router.get('/technicians/schedules', isAuthenticated, (req, res) => res.redirect('/records'));
 router.get('/reports/technicians', isAuthenticated, (req, res) => res.redirect('/dashboard'));
+router.get('/technicians/:id', isAuthenticated, getTechnicianDetail);
 
 export default router;

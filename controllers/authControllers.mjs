@@ -1,5 +1,6 @@
 import User from "../models/User.mjs";
 import bcrypt from "bcryptjs";
+import { setFlash } from "../utils/flash.mjs";
 
 // Sends empty form fields and no error message so the form starts clean.
 export const getRegisterForm = (req, res) =>{
@@ -72,6 +73,7 @@ export const registerUser = async (req, res) =>{
         }
         const newUser = new User(userData)
         await newUser.save();
+        setFlash(req, 'Account created successfully. Please log in.')
         res.redirect('/login')
     } catch (error) {
         console.error('Registration error:', error);
@@ -150,6 +152,7 @@ export const editProfile = async (req, res) => {
         const {fullName, email, phone} = req.body;
         const updatedUser = await User.findByIdAndUpdate(userId, {fullName, email, phone}, {new: true});
         if(updatedUser){
+            setFlash(req, 'Profile updated successfully.');
             res.redirect('/dashboard');
         }else{
             res.status(404).send('User not found');
@@ -163,9 +166,25 @@ export const editProfile = async (req, res) => {
 export const deleteUser = async(req, res)=>{
 	try {
 		await User.findByIdAndDelete(req.params.id)
+		setFlash(req, 'User deleted.')
 		res.redirect('/registerUser/userRecords')
 	} catch (error) {
 		console.error('Error deleting user', error)
 		res.status(500).send('Error deleting user')
+	}
+}
+
+export const getUserDetail = async(req, res)=>{
+	try {
+		const profile = await User.findById(req.params.id).lean()
+		if(!profile){
+			return res.status(404).send('User not found')
+		}
+		const nameParts = String(profile.fullName || '').split(' ').filter(Boolean).slice(0, 2)
+		const initials = nameParts.map((part) => part[0].toUpperCase()).join('') || '--'
+		res.render('userDetail', { profile, initials })
+	} catch (error) {
+		console.error('Error loading user detail', error)
+		res.status(500).send('Error loading user detail')
 	}
 }

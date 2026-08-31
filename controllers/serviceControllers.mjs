@@ -3,6 +3,11 @@ import ServiceRecord from "../models/ServiceRecord.mjs";
 import Stock from "../models/Stock.mjs";
 import Customers from "../models/Customers.mjs";
 import Vehicle from "../models/Vehicle.mjs";
+import { setFlash } from "../utils/flash.mjs";
+import { dashboardPermissionsByRole } from "./dashboardControllers.mjs";
+
+const getRolePermissions = (role) =>
+  dashboardPermissionsByRole[role] || dashboardPermissionsByRole.Technician;
 
 const LABOUR_CHARGE = 20000;
 
@@ -373,6 +378,7 @@ export const createServiceRecord = async (req, res) => {
       partsUsed: partsArray,
     });
     await newRecord.save();
+    setFlash(req, "Service record saved and stock levels updated.");
     res.redirect("/records");
   } catch (error) {
     console.error("Error creating a record", error);
@@ -408,10 +414,32 @@ export const getAllRecords = async (req, res) => {
       .populate("technicians", "fullName")
       .sort({ date: -1 });
 
-    return res.render("records", { records });
+    return res.render("records", {
+      records,
+      permissions: getRolePermissions(req.session?.userRole),
+    });
   } catch (error) {
     console.error("Error fetching records", error);
     res.status(500).send("Error fetching records");
+  }
+};
+
+export const getServiceRecordDetail = async (req, res) => {
+  try {
+    const record = await ServiceRecord.findById(req.params.id)
+      .populate("customer", "firstName lastName phone email address")
+      .populate("vehicle", "registrationNo vehicleName vehicleType color")
+      .populate("technicians", "fullName role")
+      .lean();
+
+    if (!record) {
+      return res.status(404).send("Service Record not found");
+    }
+
+    return res.render("serviceRecordDetail", { record });
+  } catch (error) {
+    console.error("Error loading service record detail", error);
+    return res.status(500).send("Error loading service record detail");
   }
 };
 
@@ -508,6 +536,7 @@ export const updateServiceRecord = async (req, res) => {
       partsUsed: partsArray,
     });
 
+    setFlash(req, "Service record updated.");
     res.redirect("/records");
   } catch (error) {
     console.error("Error updating a record", error);
@@ -551,6 +580,7 @@ export const deleteServiceRecord = async (req, res) => {
 
     await restorePartsToStock(record.partsUsed);
     await ServiceRecord.findByIdAndDelete(req.params.id);
+    setFlash(req, "Service record deleted and stock restored.");
     res.redirect("/records");
   } catch (error) {
     console.error("Error deleting a record", error);

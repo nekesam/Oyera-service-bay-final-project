@@ -8,6 +8,7 @@ import {
   getEditCustomerPage,
   updateCustomer,
   deleteCustomer,
+  getCustomerDetail,
 } from '../controllers/customerControllers.mjs';
 
 const router = express.Router();
@@ -23,6 +24,8 @@ router.get('/edit/:id', isAuthenticated, getEditCustomerPage);
 router.post('/register', isAuthenticated, validateCustomer, createCustomer);
 router.post('/edit/:id', isAuthenticated, validateCustomer, updateCustomer);
 router.post('/delete/:id', isAuthenticated, deleteCustomer);
+
+router.get('/:id', isAuthenticated, getCustomerDetail);
  
 
 export default router;

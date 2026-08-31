@@ -1,6 +1,7 @@
 import ServiceRecord from '../models/ServiceRecord.mjs';
 import User from '../models/User.mjs';
 import { dashboardPermissionsByRole } from './dashboardControllers.mjs';
+import { setFlash } from '../utils/flash.mjs';
 
 const toNumber = (value) => {
   const parsed = Number(value);
@@ -222,6 +223,7 @@ export const registerTechnician = async (req, res) => {
     const newUser = new User(userData);
     await newUser.save();
 
+    setFlash(req, `Technician "${newUser.fullName}" registered successfully.`);
     return res.redirect('/technicians');
   } catch (error) {
     const duplicateEntry = error?.code === 11000;
@@ -328,6 +330,7 @@ export const updateTechnician = async (req, res) => {
       return res.status(404).send('Technician not found');
     }
 
+    setFlash(req, `Technician "${updated.fullName}" updated successfully.`);
     return res.redirect('/technicians');
   } catch (error) {
     const existingTechnician = await User.findById(req.params.id).lean();
@@ -357,9 +360,54 @@ export const deleteTechnician = async (req, res) => {
       role: { $in: technicianRoles },
     });
 
+    setFlash(req, 'Technician deleted.');
     return res.redirect('/technicians');
   } catch (error) {
     console.error('Error deleting technician:', error);
     return res.status(500).send('Error deleting technician');
+  }
+};
+
+export const getTechnicianDetail = async (req, res) => {
+  try {
+    const technician = await User.findOne({
+      _id: req.params.id,
+      role: { $in: technicianRoles },
+    }).lean();
+
+    if (!technician) {
+      return res.status(404).send('Technician not found');
+    }
+
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+
+    const services = await ServiceRecord.find({ technicians: technician._id })
+      .populate('customer', 'firstName lastName')
+      .populate('vehicle', 'registrationNo')
+      .sort({ date: -1 })
+      .limit(50)
+      .lean();
+
+    const jobsThisMonth = services.filter((service) => new Date(service.date) >= monthStart).length;
+
+    const permissions = getRolePermissions(req.session?.userRole);
+
+    return res.render('technicianDetail', {
+      technician: {
+        ...technician,
+        initials: getInitials(technician.fullName),
+      },
+      services,
+      stats: {
+        totalJobs: services.length,
+        jobsThisMonth,
+      },
+      permissions,
+    });
+  } catch (error) {
+    console.error('Error loading technician detail:', error);
+    return res.status(500).send('Error loading technician detail');
   }
 };

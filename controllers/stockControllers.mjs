@@ -1,6 +1,7 @@
 import Stock from '../models/Stock.mjs';
 import { dashboardPermissionsByRole } from './dashboardControllers.mjs';
 import { sanitizeStockPayload } from '../Validation/userValidation.mjs';
+import { setFlash } from '../utils/flash.mjs';
 
 const getRolePermissions = (role) => {
 	return dashboardPermissionsByRole[role] || dashboardPermissionsByRole.Technician;
@@ -76,6 +77,7 @@ export const createStockItem = async (req, res) => {
 		});
 		await newStock.save();
 		console.log(newStock);
+		setFlash(req, `Stock item "${newStock.itemName}" added successfully.`);
 	    res.redirect('/registerStock/stockList');
 	} catch (error) {
 		console.error(error);
@@ -134,6 +136,7 @@ export const addStock = async (req, res) => {
 
 		const newStock = new Stock(payload);
 		await newStock.save();
+		setFlash(req, `Stock item "${newStock.itemName}" added successfully.`);
 		res.redirect('/registerStock/stockList');
 	} catch (error) {
 		console.error(error);
@@ -232,6 +235,7 @@ export const updateStock = async (req, res) => {
             }
         );
 
+        setFlash(req, `Stock item "${cleaned.itemName}" updated successfully.`);
         res.redirect('/registerStock/stockList');
 
     } catch (error) {
@@ -256,9 +260,32 @@ export const updateStock = async (req, res) => {
 export const deleteStock = async(req, res)=>{
 	try {
 		await Stock.findByIdAndDelete(req.params.id)
+		setFlash(req, 'Stock item deleted.')
 		res.redirect('/registerStock/stockList')
 	} catch (error) {
 		console.error('Error deleting stock', error)
 		res.status(500).send('Error deleting stock')
+	}
+}
+
+export const getStockDetail = async (req, res) => {
+	try {
+		const stock = await Stock.findById(req.params.id)
+			.populate('registeredBy', 'fullName')
+			.lean();
+
+		if (!stock) {
+			return res.status(404).send('Stock item not found');
+		}
+
+		const role = req.session?.userRole;
+		res.render('stockDetail', {
+			stock,
+			permissions: getRolePermissions(role),
+			canManageStock: canManageStockByRole(role),
+		});
+	} catch (error) {
+		console.error('Error loading stock detail', error);
+		res.status(500).send('Error loading stock detail');
 	}
 }
