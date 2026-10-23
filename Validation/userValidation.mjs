@@ -1,3 +1,5 @@
+import { PRICE_RULES } from '../config/pricing.mjs';
+
 const NAME_PATTERN = /^[A-Za-z\s'-]+$/;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_PATTERN = /^(?:\+256|0)7\d{8}$/;
@@ -56,7 +58,7 @@ export const validateSignup = (req, res, next) => {
         errors.push('Full name is invalid.');
     }
     if (identifier && !(isValidEmail(identifier) || isValidPhone(identifier))) {
-        errors.push('Identifier must be a valid email or phone number.');
+        errors.push('Please provide a valid email or phone number.');
     }
     if (role && !ALLOWED_USER_ROLES.includes(role)) {
         errors.push('Selected role is invalid.');
@@ -84,7 +86,7 @@ export const validateLogin = (req, res, next) => {
         errors.push('Identifier and password are required.');
     }
     if (identifier && !(isValidEmail(identifier) || isValidPhone(identifier))) {
-        errors.push('Identifier must be a valid email or phone number.');
+        errors.push('Please provide a valid email or phone number.');
     }
 
     req.body.identifier = identifier;
@@ -304,24 +306,6 @@ const parseNumber = (value) => {
     return Number.isFinite(number) ? number : NaN;
 };
 
-const STOCK_PRICE_RULES = [
-    { keywords: ['engine oil'], min: 79000, max: 200000 },
-    { keywords: ['brake fluid'], min: 13000, max: 20000 },
-    { keywords: ['oil filter'], min: 15000, max: 20000 },
-];
-
-const normalizeRulePrice = (price, rule) => {
-    if (!Number.isFinite(price) || !rule) return price;
-    if (price >= rule.min && price <= rule.max) return price;
-
-    // Accept common data-entry typo where one trailing zero was omitted.
-    const scaledByTen = price * 10;
-    if (scaledByTen >= rule.min && scaledByTen <= rule.max) {
-        return scaledByTen;
-    }
-
-    return price;
-};
 
 const validateStockPayload = (body) => {
     const stockId = toCleanString(body?.stockId);
@@ -359,18 +343,15 @@ const validateStockPayload = (body) => {
         errors.push('Unit price must be a non-negative number.');
     }
     const priceText = `${itemName} ${category}`.toLowerCase();
-    const activeRule = STOCK_PRICE_RULES.find((rule) => rule.keywords.some((keyword) => priceText.includes(keyword)));
-    const unitPrice = normalizeRulePrice(unitPriceInput, activeRule);
+    // Price bands come from config/pricing.mjs (single source of truth). The price is checked as typed, never silently changed.
+    const unitPrice = unitPriceInput;
 
     if (Number.isFinite(unitPrice)) {
-        if (priceText.includes('engine oil') && (unitPrice < 79000 || unitPrice > 200000)) {
-            errors.push('Engine oil price must be between UGX 79,000 and UGX 200,000.');
-        }
-        if (priceText.includes('brake fluid') && (unitPrice < 13000 || unitPrice > 20000)) {
-            errors.push('Brake fluid price must be between UGX 13,000 and UGX 20,000.');
-        }
-        if (priceText.includes('oil filter') && (unitPrice < 15000 || unitPrice > 20000)) {
-            errors.push('Oil filter price must be between UGX 15,000 and UGX 20,000.');
+        for (const rule of PRICE_RULES) {
+            const applies = rule.keywords.some((keyword) => priceText.includes(keyword));
+            if (applies && (unitPrice < rule.min || unitPrice > rule.max)) {
+                errors.push(`${rule.label} price must be between UGX ${rule.min.toLocaleString('en-US')} and UGX ${rule.max.toLocaleString('en-US')}.`);
+            }
         }
     }
     if (unit && !ALLOWED_STOCK_UNITS.includes(unit)) {
