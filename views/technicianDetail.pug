@@ -25,7 +25,7 @@ block content
             a.detail-btn.ghost(href='/technicians')
               i.fas.fa-arrow-left
               | Back
-            if permissions.showTechnicians
+            if permissions.canManageTechnicians
               a.detail-btn.primary(href=`/technicians/edit/${technician._id}`)
                 i.fas.fa-pen
                 | Edit

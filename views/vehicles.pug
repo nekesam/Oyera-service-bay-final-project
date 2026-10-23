@@ -241,6 +241,19 @@ block content
                     span Heavy Vehicles
                     strong= dashboardStats.heavyVehicles
 
+            //- Most serviced vehicles
+            section.side-card
+              h2 Most Serviced
+              if popularVehicles && popularVehicles.length
+                ul.ui-bars(style='margin-top:14px')
+                  each v in popularVehicles
+                    li
+                      .bar-row
+                        span= v.name
+                        span #{v.serviceVisits} visit#{v.serviceVisits === 1 ? '' : 's'}
+              else
+                p(style='color:var(--ink-faint);font-size:14px;margin:12px 0 0') No service visits yet.
+
         //- Footer
         footer.page-footer
           span © 2026 Oyera Auto Service Bay Ltd. All rights reserved.

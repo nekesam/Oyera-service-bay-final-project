@@ -32,29 +32,26 @@ block content
 
               .form-field
                 label(for='first-name') First Name
-                input#first-name(type='text' name='firstName' required='' value=formData && formData.firstName ? formData.firstName : '')
+                input#first-name(type='text' name='firstName' placeholder='Enter first name' required='' value=formData && formData.firstName ? formData.firstName : '')
 
               .form-field
                 label(for='last-name') Last Name
-                input#last-name(type='text' name='lastName' required='' value=formData && formData.lastName ? formData.lastName : '')
+                input#last-name(type='text' name='lastName' placeholder='Enter last name' required='' value=formData && formData.lastName ? formData.lastName : '')
 
               .form-field
                 label(for='phone') Phone Number
-                input#phone(type='tel' name='phone' required='' value=formData && formData.phone ? formData.phone : '')
+                input#phone(type='tel' name='phone' placeholder='+2567XXXXXXXX, or 07XXXXXXXX' required='' value=formData && formData.phone ? formData.phone : '')
 
               .form-field
                 label(for='email') Email Address
-                input#email(type='email' name='email' value=formData && formData.email ? formData.email : '')
+                input#email(type='email' name='email' placeholder="example@example.com" value=formData && formData.email ? formData.email : '')
 
               .form-field
                 label(for='address') Physical Address
-                input#address(type='text' name='address' value=formData && formData.address ? formData.address : '')
+                input#address(type='text' name='address' placeholder="Enter physical address" value=formData && formData.address ? formData.address : '')
 
             .form-actions
               a.btn-secondary(href='/customers/records') Cancel
               button.btn-primary(type='submit') Save Customer
 
 block pageScripts
-  script(src='/js/validation.js')
-  script(src='/js/store.js')
-  script(src='/js/customers.js')

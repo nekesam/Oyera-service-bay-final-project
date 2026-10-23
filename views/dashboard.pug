@@ -1,210 +1,191 @@
 extends layout
-
-block headStyles
-  link(rel='stylesheet' href='/css/dashboard.css')
+include partials/badges
 
 block content
   .main-container
-
     - const activePage = 'dashboard'
     include partials/sidebar
 
     main.content
+      .ui-page
+        - const showMoney = permissions && permissions.showReports
+        - const showPayments = permissions && permissions.showPayments
+        - const firstName = user && user.fullName ? user.fullName.split(' ')[0] : 'there'
+        - const today = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
-      .dashboard-page
+        header.ui-page-header
+          div
+            h1 Welcome back, #{firstName}
+            p #{today} · here's what's happening at the bay.
+          .ui-actions
+            a.ui-btn.primary(href='/addRecord')
+              i.fas.fa-screwdriver-wrench
+              | New service
+            if !permissions || permissions.showCustomers
+              a.ui-btn(href='/customers/register')
+                i.fas.fa-user-plus
+                | Customer
+            if !permissions || permissions.canManageVehicles
+              a.ui-btn(href='/vehicles/register')
+                i.fas.fa-car
+                | Vehicle
+            if !permissions || permissions.canManageStock
+              a.ui-btn(href='/registerStock/addStock')
+                i.fas.fa-box
+                | Stock
 
-        //- Top Header Section
-        header.page-header
-          .page-header-left
+        section.ui-grid.fit(style='margin-bottom:18px')
+          a.ui-card.ui-stat(href='/records?status=In%20progress' style='text-decoration:none')
+            .ui-stat-icon.sky: i.fas.fa-gears
+            div
+              .ui-stat-label Active jobs
+              .ui-stat-value= stats.activeJobs
+              .ui-stat-note #{stats.jobsToday} started today
+          if showMoney
+            a.ui-card.ui-stat(href='/records' style='text-decoration:none')
+              .ui-stat-icon: i.fas.fa-coins
+              div
+                .ui-stat-label Billed in total
+                .ui-stat-value UGX #{Number(stats.billed).toLocaleString('en-US')}
+                .ui-stat-note UGX #{Number(stats.todayRevenue).toLocaleString('en-US')} today
+          if showPayments
+            a.ui-card.ui-stat(href='/records?payment=Unpaid' style='text-decoration:none')
+              .ui-stat-icon.red: i.fas.fa-hand-holding-dollar
+              div
+                .ui-stat-label Still to collect
+                .ui-stat-value UGX #{Number(stats.outstanding).toLocaleString('en-US')}
+                .ui-stat-note UGX #{Number(stats.received).toLocaleString('en-US')} received
+          a.ui-card.ui-stat(href='/vehicles' style='text-decoration:none')
+            .ui-stat-icon.green: i.fas.fa-car
+            div
+              .ui-stat-label Vehicles
+              .ui-stat-value= stats.vehicles
+              .ui-stat-note #{stats.customers} customers
+          if !showPayments
+            a.ui-card.ui-stat(href='/registerStock/stockList' style='text-decoration:none')
+              .ui-stat-icon.amber: i.fas.fa-triangle-exclamation
+              div
+                .ui-stat-label Low stock
+                .ui-stat-value= lowStock.length
+                .ui-stat-note items to reorder
+          if showMoney && !showPayments
+            a.ui-card.ui-stat(href='/registerStock/stockList' style='text-decoration:none')
+              .ui-stat-icon.amber: i.fas.fa-warehouse
+              div
+                .ui-stat-label Stock value
+                .ui-stat-value UGX #{Number(stats.inventoryValue).toLocaleString('en-US')}
 
-            h1 Welcome back, #{user ? user.role : 'User'}!
+        if showMoney
+          section.ui-grid.main-side(style='margin-bottom:18px')
+            article.ui-card
+              .ui-card-head
+                h2 Revenue, last 6 months
+                if showPayments
+                  a(href='/reports') Reports
+              .ui-card-body
+                div(style='position:relative;height:260px')
+                  canvas#revenueChart(aria-label='Revenue by month' role='img')
+            article.ui-card
+              .ui-card-head
+                h2 Jobs by stage
+              .ui-card-body
+                div(style='position:relative;height:260px')
+                  canvas#statusChart(aria-label='Jobs by stage' role='img')
 
-            .welcome-user-info
-              .welcome-user-icon
-                i.fas.fa-user
+        section.ui-grid.main-side(style='margin-bottom:18px')
+          article.ui-card
+            .ui-card-head
+              h2 Recent jobs
+              a(href='/records') View all
+            .ui-card-body(style='padding-top:8px')
+              if recentRecords.length
+                .ui-table-wrap
+                  table.ui-table
+                    thead
+                      tr
+                        th Date
+                        th Customer
+                        th Vehicle
+                        th Status
+                        if showMoney
+                          th.num Total (UGX)
+                    tbody
+                      each record in recentRecords
+                        tr
+                          td.muted= new Date(record.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
+                          td
+                            a.row-link(href=`/records/${record._id}`)
+                              if record.customer
+                                = `${record.customer.firstName} ${record.customer.lastName}`
+                              else
+                                | Unknown customer
+                          td= record.vehicle ? record.vehicle.registrationNo : 'N/A'
+                          td: +jobBadge(record.jobStatus)
+                          if showMoney
+                            td.num: +money(record.totalCost)
+              else
+                .ui-empty
+                  i.fas.fa-clipboard-list
+                  strong No jobs yet
+                  span Add the first service to see it here.
 
-              .welcome-user-details
-                span#currentDateTime
-                span.welcome-user-name
-                  | #{user && user.fullName ? user.fullName : 'User'}
-            p Here's what's happening at Oyera Auto Service Bay today.
+          article.ui-card
+            .ui-card-head
+              h2 Low stock
+              a(href='/registerStock/stockList') Stock
+            .ui-card-body
+              if lowStock.length
+                ul.ui-bars
+                  each item in lowStock
+                    - const level = item.reorderLevel !== undefined && item.reorderLevel !== null ? item.reorderLevel : 5
+                    li
+                      .bar-row
+                        span= item.itemName
+                        span #{item.quantity} left
+                      .track
+                        .fill(style=`width:${Math.min(100, Math.round(((item.quantity || 0) / Math.max(level, 1)) * 100))}%;background:${(item.quantity || 0) === 0 ? 'var(--danger)' : 'var(--accent)'}`)
+              else
+                .ui-empty(style='padding:24px 8px')
+                  i.fas.fa-circle-check
+                  strong Stock looks healthy
+                  span Nothing is running low.
 
-          //- Quick Actions Section
-        section.quick-actions
-
-            h5 QUICK OPERATIONS
-
-            .actions-grid
-
-              if !permissions || permissions.showCustomers
-                a.action-card.tone-blue(href="/customers/register")
-                  i.fas.fa-user-plus
-                  span Register Customer
-
-              if !permissions || permissions.canManageVehicles
-                a.action-card.tone-orange(href="/vehicles/register")
-                  i.fas.fa-car
-                  span Register Vehicle
-
-              a.action-card.tone-purple(href="/addRecord")
-                i.fas.fa-screwdriver-wrench
-                span Register Service
-
-              if !permissions || permissions.canManageStock
-                a.action-card.tone-green(href="/registerStock/inventory")
-                  i.fas.fa-boxes-stacked
-                  span Register Stock
-
-              a.action-card.tone-orange(href="/registerStock/stockList")
-                i.fas.fa-warehouse
-                span View Inventory
-
-
-        //- Summary Cards
-        section.dashboard-stats(aria-label="Dashboard Statistics")
-
-          article.stat-card(data-href='/vehicles')
-            .stat-icon.total
-              i.fas.fa-car
-            .card-content
-              p.card-title Total Cars
-              h2#statTotalCars= dashboardStats && dashboardStats.totalCars !== undefined ? dashboardStats.totalCars : 0
-
-          article.stat-card(data-href='/records')
-            .stat-icon.revenue
-              i.fas.fa-coins
-            .card-content
-              p.card-title Total Revenue
-              h2#statRevenue
-                | UGX #{dashboardStats && dashboardStats.totalRevenue !== undefined ? Number(dashboardStats.totalRevenue).toLocaleString() : 0}
-
-          article.stat-card(data-href='/records')
-            .stat-icon.active-jobs
-              i.fa-solid.fa-screwdriver-wrench
-            .card-content
-              p.card-title Active Jobs
-              h2#statActiveJobs= dashboardStats && dashboardStats.activeJobs !== undefined ? dashboardStats.activeJobs : 0
-
-          article.stat-card(data-href='/customers/records')
-            .stat-icon.parts-sold
-              i.fas.fa-users
-            .card-content
-              p.card-title Total Customers
-              h2#statPartsSold= dashboardStats && dashboardStats.totalCustomers !== undefined ? dashboardStats.totalCustomers : 0
-
-        //- Additional Dashboard Statistics
-        section.dashboard-stats(aria-label="Additional Dashboard Statistics")
-
-          article.stat-card(data-href='/records')
-            .stat-icon.parts-sold
-              i.fas.fa-boxes-stacked
-            .card-content
-              p.card-title Parts Sold
-              h2#statAllPartsSold= dashboardStats && dashboardStats.partsSold !== undefined ? dashboardStats.partsSold : 0
-
-          article.stat-card(data-href='/registerStock/stockList')
-            .stat-icon.revenue
-              i.fas.fa-warehouse
-            .card-content
-              p.card-title Inventory Value
-              h2#statInventoryValue
-                | UGX #{dashboardStats && dashboardStats.inventoryValue !== undefined ? Number(dashboardStats.inventoryValue).toLocaleString() : 0}
-
-          article.stat-card(data-href='/registerStock/stockList')
-            .stat-icon.total
-              i.fas.fa-layer-group
-            .card-content
-              p.card-title Total Stock Items
-              h2#statTotalStockItems= dashboardStats && dashboardStats.totalStockItems !== undefined ? dashboardStats.totalStockItems : 0
-
-          article.stat-card(data-href='/vehicles')
-            .stat-icon.active-jobs
-              i.fas.fa-car-side
-            .card-content
-              p.card-title Cars Today
-              h2#statCarsToday= dashboardStats && dashboardStats.carsToday !== undefined ? dashboardStats.carsToday : 0
-        //- Two Column Section
-        .dashboard-grid
-
-          //- Recent Service Records
-          section.dashboard-card.large
-
-            .card-header
-              h2 Recent Service Records
-              a(href="/records") View All
-
-            .table-responsive
-              table.table
-                thead
-                  tr
-                    th Date
-                    th Customer Name
-                    th Car Number Plate
-                    th Service Offered
-                    th Technicians
-                    th Total Cost
-
-                tbody
-                  if recentRecords && recentRecords.length
-                    each record in recentRecords
-                      tr(data-href=`/records/${record._id}`)
-                        td= new Date(record.date).toLocaleDateString()
-                        td
-                          if record.customer
-                            | #{record.customer.firstName} #{record.customer.lastName}
-                          else
-                            | Unknown Customer
-                        td
-                          if record.vehicle
-                            | #{record.vehicle.registrationNo}
-                          else
-                            | Unknown Plate
-                        td= (record.servicesDone || []).join(', ')
-                        td
-                          if record.technicians && record.technicians.length
-                            = record.technicians.map(t => t.fullName || 'Unknown Technician').join(', ')
-                          else
-                            | No technician assigned
-                        td= Number(record.totalCost || 0).toLocaleString()
-                  else
-                    tr
-                      td.text-center.text-muted(colspan='6') No service records yet.
-
-          //- Recent Stock List
-          section.dashboard-card
-
-            .card-header
-              h2 Recent Stock List
-              a(href="/registerStock/stockList") View All
-
-            .table-responsive
-              table.table
-                thead
-                  tr
-                    th Date
-                    th Item
-                    th Quantity
-                    th Unit Price
-
-                tbody
-                  if recentStockItems && recentStockItems.length
-                    each stock in recentStockItems
-                      tr(data-href=`/registerStock/stock/${stock._id}`)
-                        td= new Date(stock.date || stock.createdAt).toLocaleDateString()
-                        td= stock.itemName
-                        td= stock.quantity !== undefined && stock.quantity !== null ? stock.quantity : 0
-                        td= Number(stock.unitPrice || 0).toLocaleString()
-                  else
-                    tr
-                      td.text-center.text-muted(colspan='4') No stock items yet.
-
-        //- Footer
-        footer.page-footer
-          span © 2026 Oyera Auto Service Bay Ltd. All rights reserved.
-          span Professional care for every ride.
-
+        section.ui-grid.cols-2
+          article.ui-card
+            .ui-card-head
+              h2 Most used parts
+            .ui-card-body
+              if parts.length
+                - const maxQty = Math.max.apply(null, parts.map((p) => p.quantity)) || 1
+                ul.ui-bars
+                  each part in parts
+                    li
+                      .bar-row
+                        span= part.name
+                        span #{part.quantity} used
+                      .track
+                        .fill(style=`width:${Math.round((part.quantity / maxQty) * 100)}%`)
+              else
+                p.ui-empty(style='padding:16px 0') No parts used yet.
+          article.ui-card
+            .ui-card-head
+              h2 Team workload
+            .ui-card-body
+              if workload.length
+                - const maxJobs = Math.max.apply(null, workload.map((w) => w.jobs)) || 1
+                ul.ui-bars
+                  each person in workload
+                    li
+                      .bar-row
+                        span= person.name
+                        span #{person.jobs} job#{person.jobs === 1 ? '' : 's'}
+                      .track
+                        .fill(style=`width:${Math.round((person.jobs / maxJobs) * 100)}%`)
+              else
+                p.ui-empty(style='padding:16px 0') No jobs assigned yet.
 
 block pageScripts
-  script(src="/js/dashboard.js")
-  script(src="/js/cardLinks.js")
-
+  if showMoney
+    script#chart-data(type='application/json')!= chartsJson
+    script(src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js')
+    script(src='/js/dashboard-charts.js')

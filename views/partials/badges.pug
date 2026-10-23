@@ -1,0 +1,14 @@
+//- Small coloured labels used on several pages.
+//-   include partials/badges
+//-   +jobBadge(record.jobStatus)   +payBadge(record.paymentStatus)
+
+mixin jobBadge(status)
+  - var tone = { 'Booked': 'grey', 'In progress': 'blue', 'Ready for pickup': 'amber', 'Collected': 'green' }[status] || 'grey'
+  span.ui-badge(class=tone)= status
+
+mixin payBadge(status)
+  - var tone = { 'Paid': 'green', 'Part paid': 'amber', 'Unpaid': 'red' }[status] || 'grey'
+  span.ui-badge(class=tone)= status
+
+mixin money(value)
+  | #{Number(value || 0).toLocaleString('en-US')}

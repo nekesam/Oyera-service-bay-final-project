@@ -1,7 +1,5 @@
 extends layout
-
-block headStyles
-  link(rel='stylesheet' href='/css/detail.css')
+include partials/badges
 
 block content
   .main-container
@@ -9,90 +7,148 @@ block content
     include partials/sidebar
 
     main.content
-      .detail-page
-        - const customerName = record.customer ? `${record.customer.firstName || ''} ${record.customer.lastName || ''}`.trim() : 'Unknown Customer'
+      .ui-page
+        - const customerName = record.customer ? `${record.customer.firstName || ''} ${record.customer.lastName || ''}`.trim() : 'Unknown customer'
         - const plate = record.vehicle ? record.vehicle.registrationNo : 'N/A'
+        - const stepIndex = statuses.indexOf(record.jobStatus)
+        - const hasLines = record.lineItems && record.lineItems.length
 
-        .page-heading
-          .heading-left
-            .breadcrumb
+        header.ui-page-header
+          div
+            .ui-crumbs
               a(href='/dashboard') Dashboard
               i.fas.fa-chevron-right
               a(href='/records') Services
               i.fas.fa-chevron-right
-              span Service Record
-            h1 Service Record
-            p #{customerName} · #{plate} · #{new Date(record.date).toLocaleDateString()}
-
-          .detail-actions
-            a.detail-btn.ghost(href='/records')
+              span Service record
+            h1= customerName
+            p #{plate} · #{new Date(record.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}
+          .ui-actions
+            a.ui-btn(href='/records')
               i.fas.fa-arrow-left
               | Back
-            a.detail-btn.primary(href=`/records/edit/${record._id}`)
+            a.ui-btn(href=`/records/${record._id}/invoice`)
+              i.fas.fa-file-invoice
+              | Invoice
+            a.ui-btn(href=`/records/edit/${record._id}`)
               i.fas.fa-pen
               | Edit
-            form.action-form(action=`/records/delete/${record._id}` method='POST' onsubmit="return confirm('Delete this service record?');")
-              button.detail-btn.danger(type='submit')
+            form(action=`/records/delete/${record._id}` method='POST' onsubmit="return confirm('Delete this service record? Its parts go back to stock.');")
+              button.ui-btn.danger(type='submit')
                 i.fas.fa-trash
                 | Delete
 
-        .detail-shell
-          .detail-card
-            .detail-card__header
-              .detail-avatar
-                i.fas.fa-screwdriver-wrench
-              div
-                h2= customerName
-                span Serviced #{new Date(record.date).toLocaleDateString()}
+        section.ui-card(style='margin-bottom:18px')
+          .ui-card-body
+            .ui-steps
+              each step, i in statuses
+                form(action=`/records/${record._id}/status` method='POST' style='flex:1 1 120px;display:flex')
+                  input(type='hidden' name='status' value=step)
+                  button.ui-step(type='submit' class=(i < stepIndex ? 'done' : (i === stepIndex ? 'current' : '')) style='width:100%;cursor:pointer' title=`Mark as ${step}`)= step
 
-            .detail-grid
-              .detail-item
-                span Customer
-                strong
-                  if record.customer
-                    a(href=`/customers/${record.customer._id}`)= customerName
-                  else
-                    | Unknown Customer
-              .detail-item
-                span Vehicle
-                strong
-                  if record.vehicle
-                    a(href=`/vehicles/${record.vehicle._id}`)= plate
-                  else
-                    | N/A
-              .detail-item
-                span Phone
-                strong= record.customer ? (record.customer.phone || '—') : '—'
-              .detail-item
-                span Vehicle Name
-                strong= record.vehicle ? record.vehicle.vehicleName : '—'
-              .detail-item.full
-                span Services Performed
-                strong= (record.servicesDone || []).join(', ') || '—'
-              .detail-item.full
-                span Technicians
-                strong= (record.technicians || []).map((t) => t.fullName).filter(Boolean).join(', ') || '—'
-              .detail-item
-                span Labour Charge (UGX)
-                strong= Number(record.labourCharge || 0).toLocaleString()
-              .detail-item
-                span Total Cost (UGX)
-                strong= Number(record.totalCost || 0).toLocaleString()
+        .ui-grid.main-side
+          div
+            section.ui-card(style='margin-bottom:18px')
+              .ui-card-head
+                h2 Job details
+              .ui-card-body
+                dl.ui-dl
+                  dt Customer
+                  dd
+                    if record.customer
+                      a(href=`/customers/${record.customer._id}`)= customerName
+                    else
+                      | Unknown
+                  dt Phone
+                  dd= record.customer ? (record.customer.phone || '—') : '—'
+                  dt Vehicle
+                  dd
+                    if record.vehicle
+                      a(href=`/vehicles/${record.vehicle._id}`) #{record.vehicle.vehicleName} · #{plate}
+                    else
+                      | N/A
+                  dt Services
+                  dd= (record.servicesDone || []).join(', ') || '—'
+                  dt Technicians
+                  dd= (record.technicians || []).map((t) => t.fullName).filter(Boolean).join(', ') || '—'
+                  dt Job status
+                  dd: +jobBadge(record.jobStatus)
 
-          .detail-sections
-            section.detail-section
-              h2 Parts and Oils Used
-              if record.partsUsed && record.partsUsed.length
-                .detail-table-wrap
-                  table.detail-table
+            section.ui-card
+              .ui-card-head
+                h2 Bill
+              .ui-card-body(style='padding-top:10px')
+                .ui-table-wrap
+                  table.ui-table
                     thead
                       tr
                         th Item
-                        th Quantity
+                        th.num Qty
+                        th.num Unit (UGX)
+                        th.num Amount (UGX)
                     tbody
-                      each part in record.partsUsed
+                      if hasLines
+                        each line in record.lineItems
+                          tr
+                            td= line.description
+                            td.num= line.quantity
+                            td.num: +money(line.unitPrice)
+                            td.num: +money(line.amount)
+                      else
+                        //- jobs saved before itemised bills existed
                         tr
-                          td= part.itemName
-                          td= part.quantity
-              else
-                p.detail-empty No parts recorded for this service.
+                          td Labour
+                          td.num 1
+                          td.num: +money(record.labourCharge)
+                          td.num: +money(record.labourCharge)
+                        each part in (record.partsUsed || [])
+                          tr
+                            td= part.itemName
+                            td.num= part.quantity
+                            td.num —
+                            td.num —
+                      tr
+                        td(colspan='3' style='text-align:right;font-weight:700') Total
+                        td.num(style='font-weight:800'): +money(record.totalCost)
+                if !hasLines
+                  p.muted(style='margin:10px 0 0;font-size:13px;color:var(--ink-faint)') This job was saved before itemised bills existed. Edit and save it to get a full breakdown.
+
+          aside
+            section.ui-card(style='margin-bottom:18px')
+              .ui-card-head
+                h2 Payment
+                +payBadge(record.paymentStatus)
+              .ui-card-body
+                dl.ui-dl(style='grid-template-columns:110px 1fr')
+                  dt Total
+                  dd UGX #{Number(record.totalCost).toLocaleString('en-US')}
+                  dt Paid
+                  dd UGX #{Number(record.amountPaid).toLocaleString('en-US')}
+                  dt Balance
+                  dd(style='font-weight:800') UGX #{Number(record.balanceDue).toLocaleString('en-US')}
+
+                if record.payments && record.payments.length
+                  h3(style='font-size:13px;margin:20px 0 8px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.05em') Payments received
+                  ul.ui-bars(style='gap:10px')
+                    each p in record.payments
+                      li
+                        .bar-row
+                          span #{p.method}
+                          strong UGX #{Number(p.amount).toLocaleString('en-US')}
+                        span(style='font-size:12.5px;color:var(--ink-faint)') #{new Date(p.date).toLocaleDateString('en-GB')}#{p.receivedBy && p.receivedBy.fullName ? ' · ' + p.receivedBy.fullName : ''}#{p.note ? ' · ' + p.note : ''}
+
+                if canTakePayment && record.balanceDue > 0
+                  form.ui-field(action=`/records/${record._id}/payments` method='POST' style='margin-top:20px;gap:10px')
+                    label(for='amount') Record a payment
+                    input#amount.ui-input(type='number' name='amount' min='1' max=record.balanceDue step='1' value=record.balanceDue required)
+                    select.ui-select(name='method' required aria-label='Payment method')
+                      each m in paymentMethods
+                        option(value=m)= m
+                    input.ui-input(type='text' name='note' maxlength='200' placeholder='Note (optional)')
+                    button.ui-btn.primary(type='submit')
+                      i.fas.fa-coins
+                      | Save payment
+                else if record.balanceDue === 0
+                  p(style='margin:16px 0 0;color:var(--success);font-weight:600')
+                    i.fas.fa-circle-check
+                    |  Fully paid

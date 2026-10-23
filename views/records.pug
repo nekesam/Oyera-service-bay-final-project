@@ -1,189 +1,139 @@
 extends layout
-
-block headStyles
-  link(rel='stylesheet' href='/css/serviceRecords.css')
+include partials/badges
 
 block content
   .main-container
     - const activePage = 'services'
     include partials/sidebar
-    main.content
-      .services-page
-        - const totalRecords = records.length
-        - const todayDate = new Date().toDateString()
-        - const servicedToday = records.filter((record) => new Date(record.date).toDateString() === todayDate).length
-        - const uniqueCustomers = new Set(records.map((record) => record.customer?._id?.toString()).filter(Boolean)).size
-        - const totalRevenue = records.reduce((sum, record) => sum + (Number(record.totalCost) || 0), 0)
-        - const averageTicket = totalRecords ? Math.round(totalRevenue / totalRecords) : 0
 
-        .page-heading
-          .heading-left
-            .breadcrumb
+    main.content
+      .ui-page
+        - const showMoney = permissions && permissions.showPayments
+        - const canManage = !permissions || permissions.canManageServices
+        - const canExport = permissions && permissions.showReports
+        - const params = { q: filters.q, status: filters.status, payment: filters.payment }
+        - const pageLink = (page) => { const sp = new URLSearchParams(); Object.entries(Object.assign({}, params, { page: page > 1 ? page : '' })).forEach(([k, v]) => { if (v) sp.set(k, v) }); const t = sp.toString(); return t ? '?' + t : '?' }
+
+        header.ui-page-header
+          div
+            .ui-crumbs
               a(href='/dashboard') Dashboard
               i.fas.fa-chevron-right
               span Services
             h1 Services
-            p Track captured services, technicians and customer jobs.
+            p Every job the bay has taken on, who worked on it, and where it stands.
+          .ui-actions
+            if canExport
+              a.ui-btn(href='/reports/export/services.csv')
+                i.fas.fa-file-csv
+                | Export CSV
+            a.ui-btn.primary(href='/addRecord')
+              i.fas.fa-plus
+              | Add service
 
-          a.add-service-btn(href='/addRecord')
-            i.fas.fa-plus
-            | Add Service
+        section.ui-grid.fit(style='margin-bottom:20px')
+          article.ui-card.ui-stat
+            .ui-stat-icon: i.fas.fa-clipboard-list
+            div
+              .ui-stat-label Total jobs
+              .ui-stat-value= summary.jobs
+          article.ui-card.ui-stat
+            .ui-stat-icon.sky: i.fas.fa-gears
+            div
+              .ui-stat-label In progress
+              .ui-stat-value= (statusCounts['In progress'] || 0) + (statusCounts['Booked'] || 0)
+          article.ui-card.ui-stat
+            .ui-stat-icon.amber: i.fas.fa-car-side
+            div
+              .ui-stat-label Ready for pickup
+              .ui-stat-value= statusCounts['Ready for pickup'] || 0
+          if showMoney
+            article.ui-card.ui-stat
+              .ui-stat-icon.red: i.fas.fa-coins
+              div
+                .ui-stat-label Still to collect
+                .ui-stat-value UGX #{Number(summary.outstanding).toLocaleString('en-US')}
+                .ui-stat-note of UGX #{Number(summary.billed).toLocaleString('en-US')} billed
+          else
+            article.ui-card.ui-stat
+              .ui-stat-icon.green: i.fas.fa-circle-check
+              div
+                .ui-stat-label Collected
+                .ui-stat-value= statusCounts['Collected'] || 0
 
-        section.service-stats
-          article.service-stat-card(data-href='/records')
-            .service-stat-icon.blue
-              i.fas.fa-clipboard-list
-            .service-stat-content
-              p Total Records
-              h2= totalRecords
-              span.stat-note.blue-text
-                i.fas.fa-circle
-                | Captured services
+        section.ui-card
+          form.ui-toolbar(method='get' action='/records')
+            input.ui-input.grow(type='search' name='q' value=filters.q placeholder='Search customer, plate or vehicle…' aria-label='Search')
+            select.ui-select(name='status' aria-label='Job status')
+              option(value='') All statuses
+              each s in statuses
+                option(value=s selected=filters.status === s)= s
+            if showMoney
+              select.ui-select(name='payment' aria-label='Payment status')
+                option(value='') Any payment
+                each p in ['Unpaid', 'Part paid', 'Paid']
+                  option(value=p selected=filters.payment === p)= p
+            button.ui-btn(type='submit')
+              i.fas.fa-magnifying-glass
+              | Filter
+            if filters.q || filters.status || filters.payment
+              a.ui-btn(href='/records') Clear
 
-          article.service-stat-card(data-href='/records')
-            .service-stat-icon.green
-              i.fas.fa-calendar-day
-            .service-stat-content
-              p Serviced Today
-              h2= servicedToday
-              span.stat-note.green-text
-                i.fas.fa-circle
-                | Today
-
-          article.service-stat-card(data-href='/customers/records')
-            .service-stat-icon.orange
-              i.fas.fa-users
-            .service-stat-content
-              p Unique Customers
-              h2= uniqueCustomers
-              span.stat-note.orange-text
-                i.fas.fa-circle
-                | Served customers
-
-          article.service-stat-card(data-href='/records')
-            .service-stat-icon.purple
-              i.fas.fa-coins
-            .service-stat-content
-              p Total Revenue
-              h2= totalRevenue.toLocaleString()
-              span.stat-note.purple-text
-                i.fas.fa-circle
-                | UGX captured
-
-        .service-layout
-          section.service-list.card-panel
-            .list-header
-              h2 Service Records
-              .list-controls
-                .service-search
-                  i.fas.fa-search
-                  input(type='text' placeholder='Search service...')
-
-            .table-wrapper
-              table.service-table
+          if records.length
+            .ui-table-wrap
+              table.ui-table
                 thead
                   tr
-                    th #
                     th Date
                     th Customer
-                    th Plate No.
+                    th Vehicle
                     th Services
                     th Technicians
-                    th Total Cost
-                    th Actions
-
+                    th Status
+                    if showMoney
+                      th Payment
+                    th.num Total (UGX)
+                    th
                 tbody
-                  if records.length
-                    each record, index in records
-                      tr(data-href=`/records/${record._id}`)
-                        td= index + 1
-                        td= new Date(record.date).toLocaleDateString()
-                        td
+                  each record in records
+                    tr
+                      td.muted(style='white-space:nowrap')= new Date(record.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                      td
+                        a.row-link(href=`/records/${record._id}`)
                           if record.customer
                             = `${record.customer.firstName} ${record.customer.lastName}`
                           else
-                            | Unknown Customer
-                        td
-                          if record.vehicle
-                            span.status-badge.plate-badge= record.vehicle.registrationNo
-                          else
-                            span.status-badge.plate-badge N/A
-                        td= (record.servicesDone || []).join(', ')
-                        td= (record.technicians || []).filter(Boolean).map((technician) => technician.fullName || 'Unknown Technician').join(', ')
-                        td= (Number(record.totalCost) || 0).toLocaleString()
-                        td
-                          .table-actions
-                            a.action-link.view(href=`/records/${record._id}`) View
-                            a.action-link.edit(href=`/records/edit/${record._id}`) Edit
-                            form.action-form(action=`/records/delete/${record._id}` method='POST' onsubmit="return confirm('Delete this service record?');")
-                              button.action-btn.delete(type='submit') Delete
-                  else
-                    tr
-                      td(colspan='8') No service records yet.
+                            | Unknown customer
+                      td
+                        if record.vehicle
+                          span.ui-badge.grey= record.vehicle.registrationNo
+                        else
+                          span.muted N/A
+                      td(style='max-width:220px')= (record.servicesDone || []).join(', ')
+                      td.muted= (record.technicians || []).filter(Boolean).map((t) => t.fullName).join(', ')
+                      td: +jobBadge(record.jobStatus)
+                      if showMoney
+                        td: +payBadge(record.paymentStatus)
+                      td.num
+                        +money(record.totalCost)
+                      td.num
+                        a.ui-btn.small(href=`/records/${record._id}`) View
+                        if canManage
+                          |
+                          a.ui-btn.small(href=`/records/edit/${record._id}`) Edit
 
-            .table-footer
-              span Showing 1 to #{records.length} of #{totalRecords} service records
-
-          aside.service-sidebar
-            section.side-card
-              h2 Quick Actions
-
-              a.quick-action(href='/addRecord')
-                .quick-icon.blue
-                  i.fas.fa-plus
-                .quick-text
-                  strong Capture Service
-                  span Add a new service record
-                i.fas.fa-chevron-right
-
-              if typeof permissions === 'undefined' || permissions.canManageStock
-                a.quick-action(href='/registerStock/inventory')
-                  .quick-icon.green
-                    i.fas.fa-boxes-stacked
-                  .quick-text
-                    strong Register Stock
-                    span Add inventory item
-                  i.fas.fa-chevron-right
-
-              a.quick-action(href='/technicians')
-                .quick-icon.orange
-                  i.fas.fa-user-gear
-                .quick-text
-                  strong View Technicians
-                  span Check team assignments
-                i.fas.fa-chevron-right
-
-              a.quick-action(href='/dashboard')
-                .quick-icon.purple
-                  i.fas.fa-chart-column
-                .quick-text
-                  strong Service Overview
-                  span View dashboard insights
-                i.fas.fa-chevron-right
-
-            section.side-card
-              h2 Service Summary
-              .summary-list
-                .summary-row
-                  span Average Ticket
-                  strong= averageTicket.toLocaleString()
-
-                .summary-row
-                  span Total Revenue
-                  strong= totalRevenue.toLocaleString()
-
-                .summary-row
-                  span Captured Records
-                  strong= totalRecords
-
-                .summary-row
-                  span Customers Served
-                  strong= uniqueCustomers
-
-        footer.page-footer
-          span © 2026 Oyera Auto Service Bay Ltd. All rights reserved.
-          span Professional care for every ride.
-
-block pageScripts
-  script(src='/js/tableSearch.js')
-  script(src='/js/cardLinks.js')
+            .ui-pagination
+              span Showing #{pagination.from}–#{pagination.to} of #{pagination.totalItems} jobs
+              .pager
+                if pagination.hasPrev
+                  a.ui-btn.small(href=pageLink(pagination.page - 1)) ← Previous
+                span.ui-btn.small(style='pointer-events:none;background:var(--bg)') Page #{pagination.page} of #{pagination.totalPages}
+                if pagination.hasNext
+                  a.ui-btn.small(href=pageLink(pagination.page + 1)) Next →
+          else
+            .ui-empty
+              i.fas.fa-clipboard-list
+              strong No jobs match
+              span Try a different search, or
+                a(href='/addRecord') add a service
+                | .

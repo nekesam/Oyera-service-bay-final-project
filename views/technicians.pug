@@ -26,9 +26,10 @@ block content
             h1 Technicians
             p Manage technician profiles, assignments and performance.
 
-          a.add-technician-btn(href='/technicians/register')
-            i.fas.fa-plus
-            | Add Technician
+          if permissions.canManageTechnicians
+            a.add-technician-btn(href='/technicians/register')
+              i.fas.fa-plus
+              | Add Technician
 
         //- Statistics Overview
         section.technician-stats
@@ -135,9 +136,10 @@ block content
                         td
                           .table-actions
                             a.action-link.view(href=`/technicians/${technician._id}`) View
-                            a.action-link.edit(href=`/technicians/edit/${technician._id}`) Edit
-                            form.action-form(action=`/technicians/delete/${technician._id}` method='POST' onsubmit="return confirm('Delete this technician?');")
-                              button.action-btn.delete(type='submit') Delete
+                            if permissions.canManageTechnicians
+                              a.action-link.edit(href=`/technicians/edit/${technician._id}`) Edit
+                              form.action-form(action=`/technicians/delete/${technician._id}` method='POST' onsubmit="return confirm('Delete this technician?');")
+                                button.action-btn.delete(type='submit') Delete
                   else
                     tr
                       td(colspan='6') No technicians found.

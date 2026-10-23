@@ -1,0 +1,110 @@
+extends layout
+include partials/badges
+
+block content
+  .main-container
+    - const activePage = 'services'
+    include partials/sidebar
+
+    main.content
+      .ui-page(style='max-width:860px')
+        - const customerName = record.customer ? `${record.customer.firstName || ''} ${record.customer.lastName || ''}`.trim() : 'Unknown customer'
+        - const invoiceNo = 'INV-' + String(record._id).slice(-6).toUpperCase()
+        - const hasLines = record.lineItems && record.lineItems.length
+
+        header.ui-page-header.no-print
+          div
+            .ui-crumbs
+              a(href='/records') Services
+              i.fas.fa-chevron-right
+              a(href=`/records/${record._id}`) Service record
+              i.fas.fa-chevron-right
+              span Invoice
+            h1 Invoice
+          .ui-actions
+            a.ui-btn(href=`/records/${record._id}`)
+              i.fas.fa-arrow-left
+              | Back
+            button.ui-btn.primary(type='button' onclick='window.print()')
+              i.fas.fa-print
+              | Print or save as PDF
+
+        article.ui-card
+          .ui-card-body(style='padding:36px')
+            div(style='display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-bottom:28px')
+              div
+                img(src='/images/bay-logo.png' alt='Oyera Auto Service Bay' style='height:54px;margin-bottom:10px')
+                div(style='font-weight:800;font-size:18px') Oyera Auto Service Bay
+                div(style='color:var(--ink-faint);font-size:13.5px') Professional care for every ride
+              div(style='text-align:right')
+                div(style='font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--ink-faint)') INVOICE
+                div(style='font-size:24px;font-weight:800')= invoiceNo
+                div(style='color:var(--ink-soft);font-size:14px') #{new Date(record.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}
+                div(style='margin-top:8px'): +payBadge(record.paymentStatus)
+
+            .ui-grid.cols-2(style='margin-bottom:26px')
+              div
+                div(style='font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--ink-faint);margin-bottom:6px') BILLED TO
+                div(style='font-weight:700')= customerName
+                if record.customer
+                  div(style='color:var(--ink-soft);font-size:14px')= record.customer.phone || ''
+                  div(style='color:var(--ink-soft);font-size:14px')= record.customer.email || ''
+                  div(style='color:var(--ink-soft);font-size:14px')= record.customer.address || ''
+              div
+                div(style='font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--ink-faint);margin-bottom:6px') VEHICLE
+                if record.vehicle
+                  div(style='font-weight:700') #{record.vehicle.vehicleName}
+                  div(style='color:var(--ink-soft);font-size:14px') Plate #{record.vehicle.registrationNo}
+                else
+                  div N/A
+                div(style='color:var(--ink-soft);font-size:14px;margin-top:6px') Serviced by #{(record.technicians || []).map((t) => t.fullName).filter(Boolean).join(', ') || '—'}
+
+            .ui-table-wrap
+              table.ui-table
+                thead
+                  tr
+                    th Description
+                    th.num Qty
+                    th.num Unit price
+                    th.num Amount
+                tbody
+                  if hasLines
+                    each line in record.lineItems
+                      tr
+                        td= line.description
+                        td.num= line.quantity
+                        td.num: +money(line.unitPrice)
+                        td.num: +money(line.amount)
+                  else
+                    tr
+                      td Labour
+                      td.num 1
+                      td.num: +money(record.labourCharge)
+                      td.num: +money(record.labourCharge)
+                    each part in (record.partsUsed || [])
+                      tr
+                        td= part.itemName
+                        td.num= part.quantity
+                        td.num —
+                        td.num —
+
+            div(style='margin:22px 0 0 auto;max-width:300px;display:grid;gap:8px;font-size:15px')
+              div(style='display:flex;justify-content:space-between')
+                span Total
+                strong UGX #{Number(record.totalCost).toLocaleString('en-US')}
+              div(style='display:flex;justify-content:space-between;color:var(--ink-soft)')
+                span Paid
+                span UGX #{Number(record.amountPaid).toLocaleString('en-US')}
+              div(style='display:flex;justify-content:space-between;font-size:18px;font-weight:800;border-top:1px solid var(--border);padding-top:10px')
+                span Balance due
+                span UGX #{Number(record.balanceDue).toLocaleString('en-US')}
+
+            if record.payments && record.payments.length
+              div(style='margin-top:28px')
+                div(style='font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--ink-faint);margin-bottom:8px') PAYMENTS RECEIVED
+                each p in record.payments
+                  div(style='display:flex;justify-content:space-between;font-size:14px;padding:4px 0;color:var(--ink-soft)')
+                    span #{new Date(p.date).toLocaleDateString('en-GB')} · #{p.method}
+                    span UGX #{Number(p.amount).toLocaleString('en-US')}
+
+            p(style='margin:34px 0 0;text-align:center;color:var(--ink-faint);font-size:13px') Thank you for choosing Oyera Auto Service Bay.

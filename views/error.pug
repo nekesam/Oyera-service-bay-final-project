@@ -1,0 +1,17 @@
+doctype html
+html(lang="en")
+  head
+    meta(charset="utf-8")
+    meta(name="viewport" content="width=device-width, initial-scale=1")
+    title #{status} | Oyera Auto Service Bay
+    style.
+      body{margin:0;min-height:100vh;display:grid;place-items:center;font-family:system-ui,Segoe UI,Arial,sans-serif;background:#eef1f5;color:#1f2a44}
+      .card{background:#fff;border-radius:16px;padding:40px 48px;max-width:460px;text-align:center;box-shadow:0 8px 30px rgba(31,42,68,.12)}
+      .code{font-size:64px;font-weight:800;color:#1f3b63;margin:0}
+      p{line-height:1.5;color:#46506a}
+      a{display:inline-block;margin-top:12px;padding:10px 22px;border-radius:10px;background:#1f3b63;color:#fff;text-decoration:none;font-weight:600}
+  body
+    .card
+      p.code= status
+      p= message
+      a(href="/dashboard") Back to dashboard
