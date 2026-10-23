@@ -2,6 +2,12 @@ import Stock from '../models/Stock.mjs';
 import { dashboardPermissionsByRole } from './dashboardControllers.mjs';
 import { sanitizeStockPayload } from '../Validation/userValidation.mjs';
 import { setFlash } from '../utils/flash.mjs';
+import { audit } from '../services/auditService.mjs';
+import { clearNotificationCache } from '../services/notificationService.mjs';
+import { whyStockCannotBeDeleted } from '../services/deletionGuards.mjs';
+import { isLowStock } from '../services/inventoryService.mjs';
+
+const withLowFlag = (items) => items.map((item) => ({ ...item, isLow: isLowStock(item) }));
 
 const getRolePermissions = (role) => {
 	return dashboardPermissionsByRole[role] || dashboardPermissionsByRole.Technician;
@@ -41,7 +47,7 @@ export const getStockPage = (req, res) => {
 
 export const getStockRecordsPage = async (req, res) => {
 	try {
-		const allStock = await Stock.find({}).sort({ createdAt: -1 }).lean();
+		const allStock = withLowFlag(await Stock.find({}).sort({ createdAt: -1 }).lean());
 		const role = req.session?.userRole;
 		res.render('stockList', {
 			allStock,
@@ -77,6 +83,8 @@ export const createStockItem = async (req, res) => {
 		});
 		await newStock.save();
 		console.log(newStock);
+		await audit(req, { action: 'created', entity: 'Stock', entityId: newStock._id, summary: `Added stock item "${newStock.itemName}" (${newStock.quantity} @ UGX ${Number(newStock.unitPrice).toLocaleString('en-US')}).` });
+		clearNotificationCache();
 		setFlash(req, `Stock item "${newStock.itemName}" added successfully.`);
 	    res.redirect('/registerStock/stockList');
 	} catch (error) {
@@ -136,6 +144,8 @@ export const addStock = async (req, res) => {
 
 		const newStock = new Stock(payload);
 		await newStock.save();
+		await audit(req, { action: 'created', entity: 'Stock', entityId: newStock._id, summary: `Added stock item "${newStock.itemName}" (${newStock.quantity} @ UGX ${Number(newStock.unitPrice).toLocaleString('en-US')}).` });
+		clearNotificationCache();
 		setFlash(req, `Stock item "${newStock.itemName}" added successfully.`);
 		res.redirect('/registerStock/stockList');
 	} catch (error) {
@@ -163,8 +173,8 @@ export const addStock = async (req, res) => {
 // get all stock from the DB
 export const getAllStock = async(req, res) =>{
 	try {
-		const allStock = await Stock.find()
-			.sort({ createdAt: -1 });
+		const allStock = withLowFlag(await Stock.find()
+			.sort({ createdAt: -1 }).lean());
 		const role = req.session?.userRole;
 		res.render('stockList', {
 			allStock,
@@ -230,11 +240,13 @@ export const updateStock = async (req, res) => {
                 unitPrice: cleaned.unitPrice,
             },
             {
-                new: true,
+                returnDocument: 'after',
                 runValidators: true,
             }
         );
 
+        await audit(req, { action: 'updated', entity: 'Stock', entityId: req.params.id, summary: `Edited stock item "${cleaned.itemName}": now ${cleaned.quantity} in stock at UGX ${Number(cleaned.unitPrice).toLocaleString('en-US')}.` });
+        clearNotificationCache();
         setFlash(req, `Stock item "${cleaned.itemName}" updated successfully.`);
         res.redirect('/registerStock/stockList');
 
@@ -259,7 +271,14 @@ export const updateStock = async (req, res) => {
 
 export const deleteStock = async(req, res)=>{
 	try {
-		await Stock.findByIdAndDelete(req.params.id)
+		const blocker = await whyStockCannotBeDeleted(req.params.id)
+		if (blocker) {
+			setFlash(req, blocker, 'danger')
+			return res.redirect('/registerStock/stockList')
+		}
+		const removed = await Stock.findByIdAndDelete(req.params.id)
+		await audit(req, { action: 'deleted', entity: 'Stock', entityId: req.params.id, summary: `Deleted stock item "${removed?.itemName || 'unknown'}".` })
+		clearNotificationCache()
 		setFlash(req, 'Stock item deleted.')
 		res.redirect('/registerStock/stockList')
 	} catch (error) {

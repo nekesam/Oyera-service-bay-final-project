@@ -9,8 +9,10 @@ const customerSchema = mongoose.Schema({
     lastName:{
         type:String
     },
+    // Stored as text in the form 0758979048 (see utils/phone.mjs). A Number lost the leading 0.
     phone:{
-        type:Number
+        type:String,
+        trim:true
     },
     email:{
         type:String
@@ -18,7 +20,10 @@ const customerSchema = mongoose.Schema({
     address:{
         type:String
     }
-});
+}, { timestamps: true });
+
+customerSchema.index({ lastName: 1, firstName: 1 });
+customerSchema.index({ phone: 1 });
 
 const Customers = mongoose.models.Customers || mongoose.model('Customers', customerSchema);
 

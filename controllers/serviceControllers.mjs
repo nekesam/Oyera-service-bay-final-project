@@ -1,589 +1,213 @@
-import User from "../models/User.mjs";
-import ServiceRecord from "../models/ServiceRecord.mjs";
-import Stock from "../models/Stock.mjs";
-import Customers from "../models/Customers.mjs";
-import Vehicle from "../models/Vehicle.mjs";
-import { setFlash } from "../utils/flash.mjs";
-import { dashboardPermissionsByRole } from "./dashboardControllers.mjs";
+import User from '../models/User.mjs';
+import ServiceRecord from '../models/ServiceRecord.mjs';
+import Stock from '../models/Stock.mjs';
+import Customers from '../models/Customers.mjs';
+import Vehicle from '../models/Vehicle.mjs';
+import { setFlash } from '../utils/flash.mjs';
+import { DomainError, NotFoundError } from '../utils/errors.mjs';
+import { dashboardPermissionsByRole } from './dashboardControllers.mjs';
+import { normalizeArray } from '../services/pricing.mjs';
+import * as serviceRecords from '../services/serviceRecordService.mjs';
+import { audit } from '../services/auditService.mjs';
+import { clearNotificationCache } from '../services/notificationService.mjs';
+import { withBilling } from '../services/billing.mjs';
+import { jobStatusCounts, moneySummary } from '../services/analytics.mjs';
+import { paginate } from '../utils/paginate.mjs';
+import { JOB_STATUSES, PAYMENT_METHODS } from '../config/business.mjs';
 
-const getRolePermissions = (role) =>
-  dashboardPermissionsByRole[role] || dashboardPermissionsByRole.Technician;
+// Controllers only deal with HTTP: read the request, call a service, pick a page.
+// Pricing, stock and validation rules live in /services. Errors thrown here (or in
+// the services) reach middleware/errorHandler.mjs, so there is no try/catch noise.
 
-const LABOUR_CHARGE = 20000;
+const getRolePermissions = (role) => dashboardPermissionsByRole[role] || dashboardPermissionsByRole.Technician;
 
-const SERVICE_PRICES = {
-  "Wheel Alignment": 30000,
-  "Wheel Balance": 20000,
-};
+const TECHNICIAN_ROLES = ['Technician', 'Senior technician'];
 
-const PRICE_RULES = [
-  {
-    label: "Engine Oil",
-    keywords: ["engine oil"],
-    min: 79000,
-    max: 200000,
-  },
-  {
-    label: "Brake Fluid",
-    keywords: ["brake fluid"],
-    min: 13000,
-    max: 20000,
-  },
-  {
-    label: "Oil Filter",
-    keywords: ["oil filter"],
-    min: 15000,
-    max: 20000,
-  },
-];
-
-const normalizeArray = (value) => {
-  if (Array.isArray(value)) return value;
-  if (value === undefined || value === null || value === "") return [];
-  return [value];
-};
-
-const aggregateRequestedParts = (partIds, partQuantities) => {
-  const ids = normalizeArray(partIds);
-  const quantities = normalizeArray(partQuantities);
-  const totalsByStockId = new Map();
-
-  for (let i = 0; i < ids.length; i++) {
-    const stockId = String(ids[i] || "").trim();
-    const quantity = Number(quantities[i]);
-
-    if (!stockId || !Number.isFinite(quantity) || quantity <= 0) {
-      continue;
-    }
-
-    totalsByStockId.set(
-      stockId,
-      (totalsByStockId.get(stockId) || 0) + quantity,
-    );
-  }
-
-  return totalsByStockId;
-};
-
-const getPriceRule = (item) => {
-  const haystack =
-    `${item.itemName || ""} ${item.category || ""}`.toLowerCase();
-  return PRICE_RULES.find((rule) =>
-    rule.keywords.some((keyword) => haystack.includes(keyword)),
-  );
-};
-
-const parsePriceValue = (value) => {
-  if (typeof value === "number") {
-    return Number.isFinite(value) ? value : NaN;
-  }
-
-  if (typeof value === "string") {
-    const cleaned = value.replace(/[^0-9.]/g, "");
-    const parsed = Number(cleaned);
-    return Number.isFinite(parsed) ? parsed : NaN;
-  }
-
-  return NaN;
-};
-
-const normalizeRulePrice = (price, rule) => {
-  if (!Number.isFinite(price) || !rule) return price;
-  if (price >= rule.min && price <= rule.max) return price;
-
-  // Accept common data-entry typo where one trailing zero was omitted.
-  const scaledByTen = price * 10;
-  if (scaledByTen >= rule.min && scaledByTen <= rule.max) {
-    return scaledByTen;
-  }
-
-  return price;
-};
-
-const validatePriceRule = (item) => {
-  const rule = getPriceRule(item);
-  if (!rule) return;
-
-  const price = parsePriceValue(item.unitPrice ?? item.price);
-  if (!Number.isFinite(price)) {
-    throw new Error(`Missing unit price for ${item.itemName}`);
-  }
-
-  const normalizedPrice = normalizeRulePrice(price, rule);
-  const boundedPrice = Math.max(rule.min, Math.min(rule.max, normalizedPrice));
-  item.unitPrice = boundedPrice;
-};
-
-const buildPartsFromRequest = async (partIds, partQuantities) => {
-  const requestedParts = aggregateRequestedParts(partIds, partQuantities);
-  const partsArray = [];
-  let partsCost = 0;
-
-  for (const [stockId, quantity] of requestedParts.entries()) {
-    const stockItem = await Stock.findById(stockId);
-    if (!stockItem) {
-      throw new Error(
-        "A selected stock item no longer exists. Please refresh and try again.",
-      );
-    }
-
-    validatePriceRule(stockItem);
-
-    const unitPrice = Number(stockItem.unitPrice) || 0;
-    partsCost += unitPrice * quantity;
-
-    partsArray.push({
-      stockId: stockItem._id,
-      itemName: stockItem.itemName,
-      quantity,
-    });
-  }
-
-  return { partsArray, partsCost };
-};
-
-const calculateServiceCharges = (servicesDone) => {
-  const servicesArray = normalizeArray(servicesDone).filter(Boolean);
-  const serviceCharge = servicesArray.reduce((sum, serviceName) => {
-    return sum + (SERVICE_PRICES[serviceName] || 0);
-  }, 0);
-
-  return {
-    servicesArray,
-    serviceCharge,
-  };
-};
-
-const calculateTotalCost = ({ partsCost, serviceCharge }) => {
-  return LABOUR_CHARGE + partsCost + serviceCharge;
-};
-
-const aggregatePartsByKey = (parts = []) => {
-  const grouped = new Map();
-
-  for (const part of parts) {
-    const stockId = part?.stockId ? String(part.stockId) : "";
-    const itemName = String(part?.itemName || "").trim();
-    const quantity = Number(part?.quantity) || 0;
-
-    if (quantity <= 0) continue;
-
-    const key = stockId || `name:${itemName}`;
-    if (!grouped.has(key)) {
-      grouped.set(key, { stockId: stockId || null, itemName, quantity: 0 });
-    }
-
-    grouped.get(key).quantity += quantity;
-  }
-
-  return grouped;
-};
-
-const fetchStockByPartKey = async (part) => {
-  if (part.stockId) {
-    return Stock.findById(part.stockId);
-  }
-
-  if (part.itemName) {
-    return Stock.findOne({ itemName: part.itemName });
-  }
-
-  return null;
-};
-
-const restorePartsToStock = async (parts = []) => {
-  const grouped = aggregatePartsByKey(parts);
-
-  for (const part of grouped.values()) {
-    const stockItem = await fetchStockByPartKey(part);
-    if (!stockItem) continue;
-
-    await Stock.findByIdAndUpdate(stockItem._id, {
-      $inc: { quantity: part.quantity },
-    });
-  }
-};
-
-const ensureAndDeductParts = async (
-  parts = [],
-  restoredParts = [],
-  shouldDeduct = true,
-) => {
-  const requested = aggregatePartsByKey(parts);
-  const restored = aggregatePartsByKey(restoredParts);
-
-  for (const part of requested.values()) {
-    const stockItem = await fetchStockByPartKey(part);
-    if (!stockItem) {
-      throw new Error(
-        `Stock item not found for ${part.itemName || "selected part"}`,
-      );
-    }
-
-    const restoredQty =
-      restored.get(
-        part.stockId ? String(part.stockId) : `name:${part.itemName}`,
-      )?.quantity || 0;
-    const availableAfterRestore =
-      (Number(stockItem.quantity) || 0) + restoredQty;
-
-    if (availableAfterRestore < part.quantity) {
-      throw new Error(
-        `Insufficient stock for ${stockItem.itemName}. Available ${availableAfterRestore}, requested ${part.quantity}.`,
-      );
-    }
-  }
-
-  if (!shouldDeduct) {
-    return;
-  }
-
-  for (const part of requested.values()) {
-    const stockItem = await fetchStockByPartKey(part);
-    if (!stockItem) continue;
-
-    await Stock.findByIdAndUpdate(stockItem._id, {
-      $inc: { quantity: -part.quantity },
-    });
-  }
-};
-
-const getServiceFormData = async () => {
-  const [technicians, customers, vehicles, availableStock] = await Promise.all([
-    User.find({
-      role: { $in: ["Technician", "Senior technician"] },
-    }).lean(),
-
-    Customers.find().sort({ firstName: 1, lastName: 1 }).lean(),
-
-    Vehicle.find().sort({ registrationNo: 1 }).lean(),
-
-    Stock.find({
-      quantity: { $gt: 0 },
-    }).lean(),
-  ]);
-
-  const stockByCategory = availableStock.reduce((acc, item) => {
-    if (!acc[item.category]) {
-      acc[item.category] = [];
-    }
-
-    acc[item.category].push(item);
-    return acc;
+const groupStockByCategory = (items) =>
+  items.reduce((groups, item) => {
+    (groups[item.category] ||= []).push(item);
+    return groups;
   }, {});
 
-  return {
+const loadAddFormData = async () => {
+  const [technicians, customers, vehicles, availableStock] = await Promise.all([
+    User.find({ role: { $in: TECHNICIAN_ROLES } }).lean(),
+    Customers.find().sort({ firstName: 1, lastName: 1 }).lean(),
+    Vehicle.find().sort({ registrationNo: 1 }).lean(),
+    Stock.find({ quantity: { $gt: 0 } }).lean(),
+  ]);
+  return { technicians, customers, vehicles, stockByCategory: groupStockByCategory(availableStock) };
+};
+
+const renderAddForm = async (res, { status = 200, errorMessage = null, body = {} } = {}) => {
+  const data = await loadAddFormData();
+  return res.status(status).render('add-record', {
+    ...data,
+    errorMessage,
+    formData: {
+      customer: body.customer || '',
+      vehicle: body.vehicle || '',
+      servicesDone: normalizeArray(body.servicesDone).filter(Boolean),
+      technicians: normalizeArray(body.technicians).filter(Boolean),
+    },
+  });
+};
+
+const loadPopulatedRecord = (id) =>
+  ServiceRecord.findById(id)
+    .populate('customer', 'firstName lastName phone email')
+    .populate('vehicle', 'registrationNo vehicleName vehicleType');
+
+const renderEditForm = async (res, record, { status = 200, errorMessage = null } = {}) => {
+  const [technicians, allStock] = await Promise.all([
+    User.find({ role: { $in: TECHNICIAN_ROLES } }),
+    Stock.find(),
+  ]);
+  return res.status(status).render('editServiceRecord', {
+    record,
     technicians,
-    customers,
-    vehicles,
-    stockByCategory,
-  };
+    stockByCategory: groupStockByCategory(allStock),
+    errorMessage,
+  });
 };
 
-export const getServiceForm = async (req, res) => {
-  try {
-    const { technicians, customers, vehicles, stockByCategory } =
-      await getServiceFormData();
-
-    return res.render("add-record", {
-      technicians,
-      customers,
-      vehicles,
-      stockByCategory,
-      errorMessage: null,
-
-      formData: {
-        customer: "",
-        vehicle: "",
-        servicesDone: [],
-        technicians: [],
-      },
-    });
-  } catch (error) {
-    console.error("Error loading form:", error);
-    return res.status(500).send("Error loading form");
-  }
-};
+export const getServiceForm = (req, res) => renderAddForm(res);
 
 export const createServiceRecord = async (req, res) => {
+  let created;
   try {
-    const {
-      customer,
-      vehicle,
-      servicesDone,
-      technicians,
-      partIds,
-      partQuantities,
-    } = req.body;
-    const selectedCustomer = await Customers.findById(customer);
-
-    if (!selectedCustomer) {
-      throw new Error("Selected customer was not found.");
-    }
-
-    // Validate that vehicle belongs to selected customer
-    const selectedVehicle = await Vehicle.findOne({
-      _id: vehicle,
-      customerId: customer,
-    });
-
-    if (!selectedVehicle) {
-      throw new Error(
-        "The selected vehicle does not belong to the selected customer.",
-      );
-    }
-
     if (req.serviceValidationErrors?.length) {
-      const {
-        technicians: availableTechnicians,
-        customers,
-        vehicles,
-        stockByCategory,
-      } = await getServiceFormData();
-
-      return res.status(400).render("add-record", {
-        technicians: availableTechnicians,
-        customers,
-        vehicles,
-        stockByCategory,
-        errorMessage: req.serviceValidationErrors.join(" "),
-        formData: {
-          customer: customer || "",
-          vehicle: vehicle || "",
-          servicesDone: normalizeArray(servicesDone).filter(Boolean),
-          technicians: normalizeArray(technicians).filter(Boolean),
-        },
-      });
+      throw new DomainError(req.serviceValidationErrors.join(' '));
     }
-
-    const { servicesArray, serviceCharge } =
-      calculateServiceCharges(servicesDone);
-    const techArray = normalizeArray(technicians).filter(Boolean);
-    const { partsArray, partsCost } = await buildPartsFromRequest(
-      partIds,
-      partQuantities,
-    );
-    const totalCost = calculateTotalCost({ partsCost, serviceCharge });
-
-    await ensureAndDeductParts(partsArray);
-
-    //save the new service record
-    const newRecord = new ServiceRecord({
-      customer,
-      vehicle,
-      servicesDone: servicesArray,
-      technicians: techArray,
-      labourCharge: LABOUR_CHARGE,
-      totalCost: Number(totalCost),
-      partsUsed: partsArray,
-    });
-    await newRecord.save();
-    setFlash(req, "Service record saved and stock levels updated.");
-    res.redirect("/records");
+    created = await serviceRecords.createServiceRecord(req.body);
   } catch (error) {
-    console.error("Error creating a record", error);
-    const {
-      technicians: availableTechnicians,
-      customers,
-      vehicles,
-      stockByCategory,
-    } = await getServiceFormData();
-
-    return res.status(500).render("add-record", {
-      technicians: availableTechnicians,
-      customers,
-      vehicles,
-      stockByCategory,
-      errorMessage: error.message || "Error creating a record",
-      formData: {
-        customer: req.body?.customer || "",
-        vehicle: req.body?.vehicle || "",
-        servicesDone: normalizeArray(req.body?.servicesDone).filter(Boolean),
-        technicians: normalizeArray(req.body?.technicians).filter(Boolean),
-      },
-    });
+    if (!(error instanceof DomainError)) throw error;
+    return renderAddForm(res, { status: error.status, errorMessage: error.message, body: req.body });
   }
+  await audit(req, { action: 'created', entity: 'ServiceRecord', entityId: created._id, summary: `Created a service job totalling UGX ${created.totalCost.toLocaleString('en-US')}.` });
+  clearNotificationCache();
+  setFlash(req, 'Service record saved and stock levels updated.');
+  return res.redirect('/records');
 };
 
-// fetching data from the database
-export const getAllRecords = async (req, res) => {
-  try {
-    const records = await ServiceRecord.find()
-      .populate("customer", "firstName lastName phone email")
-      .populate("vehicle", "registrationNo vehicleName vehicleType")
-      .populate("technicians", "fullName")
-      .sort({ date: -1 });
+const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-    return res.render("records", {
-      records,
-      permissions: getRolePermissions(req.session?.userRole),
-    });
-  } catch (error) {
-    console.error("Error fetching records", error);
-    res.status(500).send("Error fetching records");
+const PAYMENT_FILTERS = {
+  Unpaid: { $expr: { $lte: [{ $sum: '$payments.amount' }, 0] } },
+  Paid: { $expr: { $gte: [{ $sum: '$payments.amount' }, '$totalCost'] } },
+  'Part paid': {
+    $and: [{ $expr: { $gt: [{ $sum: '$payments.amount' }, 0] } }, { $expr: { $lt: [{ $sum: '$payments.amount' }, '$totalCost'] } }],
+  },
+};
+
+// Turns the search box and the two drop-downs into one database filter.
+const buildRecordFilter = async ({ q, status, payment }) => {
+  const clauses = [];
+
+  const text = String(q || '').trim();
+  if (text) {
+    // every word must match a first name, last name, plate or vehicle name ("cara cli" finds Cara Client)
+    const words = text.split(/\s+/).map((word) => new RegExp(escapeRegex(word), 'i'));
+    const [customers, vehicles] = await Promise.all([
+      Customers.find({ $and: words.map((rx) => ({ $or: [{ firstName: rx }, { lastName: rx }] })) }).select('_id').lean(),
+      Vehicle.find({ $and: words.map((rx) => ({ $or: [{ registrationNo: rx }, { vehicleName: rx }] })) }).select('_id').lean(),
+    ]);
+    clauses.push({ $or: [{ customer: { $in: customers.map((c) => c._id) } }, { vehicle: { $in: vehicles.map((v) => v._id) } }] });
   }
+
+  if (JOB_STATUSES.includes(status)) {
+    // jobs saved before statuses existed count as Collected
+    clauses.push(status === 'Collected' ? { $or: [{ status: 'Collected' }, { status: { $exists: false } }] } : { status });
+  }
+  if (PAYMENT_FILTERS[payment]) clauses.push(PAYMENT_FILTERS[payment]);
+
+  return clauses.length ? { $and: clauses } : {};
+};
+
+export const getAllRecords = async (req, res) => {
+  const filters = {
+    q: String(req.query.q || '').trim(),
+    status: JOB_STATUSES.includes(req.query.status) ? req.query.status : '',
+    payment: PAYMENT_FILTERS[req.query.payment] ? req.query.payment : '',
+  };
+  const filter = await buildRecordFilter(filters);
+
+  const total = await ServiceRecord.countDocuments(filter);
+  const pagination = paginate(req.query, total);
+  const [records, summary, statusCounts, jobs] = await Promise.all([
+    ServiceRecord.find(filter)
+      .populate('customer', 'firstName lastName phone email')
+      .populate('vehicle', 'registrationNo vehicleName vehicleType')
+      .populate('technicians', 'fullName')
+      .sort({ date: -1 })
+      .skip(pagination.skip)
+      .limit(pagination.pageSize)
+      .lean(),
+    moneySummary(),
+    jobStatusCounts(),
+    ServiceRecord.estimatedDocumentCount(),
+  ]);
+
+  return res.render('records', {
+    pageTitle: 'Services',
+    records: records.map(withBilling),
+    pagination,
+    filters,
+    summary: { ...summary, jobs },
+    statusCounts,
+    statuses: JOB_STATUSES,
+    permissions: getRolePermissions(req.session?.userRole),
+  });
 };
 
 export const getServiceRecordDetail = async (req, res) => {
-  try {
-    const record = await ServiceRecord.findById(req.params.id)
-      .populate("customer", "firstName lastName phone email address")
-      .populate("vehicle", "registrationNo vehicleName vehicleType color")
-      .populate("technicians", "fullName role")
-      .lean();
-
-    if (!record) {
-      return res.status(404).send("Service Record not found");
-    }
-
-    return res.render("serviceRecordDetail", { record });
-  } catch (error) {
-    console.error("Error loading service record detail", error);
-    return res.status(500).send("Error loading service record detail");
-  }
+  const record = await ServiceRecord.findById(req.params.id)
+    .populate('customer', 'firstName lastName phone email address')
+    .populate('vehicle', 'registrationNo vehicleName vehicleType color')
+    .populate('technicians', 'fullName role')
+    .populate('payments.receivedBy', 'fullName')
+    .lean();
+  if (!record) throw new NotFoundError('Service record not found.');
+  return res.render('serviceRecordDetail', {
+    pageTitle: 'Service record',
+    record: withBilling(record),
+    statuses: JOB_STATUSES,
+    paymentMethods: PAYMENT_METHODS,
+    canTakePayment: req.session?.userRole === 'Admin',
+  });
 };
 
 export const getEditRecordForm = async (req, res) => {
-  try {
-    const record = await ServiceRecord.findById(req.params.id)
-      .populate('customer', 'firstName lastName phone email')
-      .populate('vehicle', 'registrationNo vehicleName vehicleType');
-
-    if (!record) {
-      return res.status(404).send("Service Record not found");
-    }
-    const technicians = await User.find({
-      role: { $in: ["Technician", "Senior technician"] },
-    });
-    const allStock = await Stock.find();
-    const stockByCategory = allStock.reduce((acc, item) => {
-      if (!acc[item.category]) acc[item.category] = [];
-      acc[item.category].push(item);
-      return acc;
-    }, {});
-    res.render("editServiceRecord", {
-      record,
-      technicians,
-      stockByCategory,
-      errorMessage: null,
-    });
-  } catch (error) {
-    console.error("Error loading editRecord form", error);
-    res.status(500).send("Error loading editRecord form");
-  }
+  const record = await loadPopulatedRecord(req.params.id);
+  if (!record) throw new NotFoundError('Service record not found.');
+  return renderEditForm(res, record);
 };
 
 export const updateServiceRecord = async (req, res) => {
   try {
-    const record = await ServiceRecord.findById(req.params.id);
-    if (!record) {
-      return res.status(404).send("Service Record not found");
-    }
-    const {
-      customerName,
-      carPlate,
-      servicesDone,
-      technicians,
-      partIds,
-      partQuantities,
-    } = req.body;
-
     if (req.serviceValidationErrors?.length) {
-      const techniciansList = await User.find({
-        role: { $in: ["Technician", "Senior technician"] },
-      });
-      const allStock = await Stock.find();
-      const stockByCategory = allStock.reduce((acc, item) => {
-        if (!acc[item.category]) acc[item.category] = [];
-        acc[item.category].push(item);
-        return acc;
-      }, {});
-
-      record.customerName = customerName || record.customerName;
-      record.carPlate = carPlate || record.carPlate;
-      record.servicesDone = normalizeArray(servicesDone).filter(Boolean);
-      record.technicians = normalizeArray(technicians).filter(Boolean);
-
-      return res.status(400).render("editServiceRecord", {
-        record,
-        technicians: techniciansList,
-        stockByCategory,
-        errorMessage: req.serviceValidationErrors.join(" "),
-      });
+      throw new DomainError(req.serviceValidationErrors.join(' '));
     }
-
-    const { servicesArray, serviceCharge } =
-      calculateServiceCharges(servicesDone);
-    const techArray = normalizeArray(technicians).filter(Boolean);
-    const { partsArray, partsCost } = await buildPartsFromRequest(
-      partIds,
-      partQuantities,
-    );
-    const totalCost = calculateTotalCost({ partsCost, serviceCharge });
-
-    await ensureAndDeductParts(partsArray, record.partsUsed, false);
-    await restorePartsToStock(record.partsUsed);
-    await ensureAndDeductParts(partsArray);
-
-    //update the service record in the database.
-    await ServiceRecord.findByIdAndUpdate(req.params.id, {
-      customerName,
-      carPlate,
-      servicesDone: servicesArray,
-      technicians: techArray,
-      labourCharge: LABOUR_CHARGE,
-      totalCost,
-      partsUsed: partsArray,
-    });
-
-    setFlash(req, "Service record updated.");
-    res.redirect("/records");
+    await serviceRecords.updateServiceRecord(req.params.id, req.body);
   } catch (error) {
-    console.error("Error updating a record", error);
-    const record = await ServiceRecord.findById(req.params.id);
-    if (!record) {
-      return res.status(404).send("Service Record not found");
-    }
-
-    const technicians = await User.find({
-      role: { $in: ["Technician", "Senior technician"] },
-    });
-    const allStock = await Stock.find();
-    const stockByCategory = allStock.reduce((acc, item) => {
-      if (!acc[item.category]) acc[item.category] = [];
-      acc[item.category].push(item);
-      return acc;
-    }, {});
-
-    record.customerName = req.body?.customerName || record.customerName;
-    record.carPlate = req.body?.carPlate || record.carPlate;
-    record.servicesDone = normalizeArray(req.body?.servicesDone).filter(
-      Boolean,
-    );
-    record.technicians = normalizeArray(req.body?.technicians).filter(Boolean);
-
-    return res.status(400).render("editServiceRecord", {
-      record,
-      technicians,
-      stockByCategory,
-      errorMessage: error.message || "Error updating a record",
-    });
+    if (!(error instanceof DomainError) || error instanceof NotFoundError) throw error;
+    // Show the form again with what the user typed, plus the reason it failed
+    const record = await loadPopulatedRecord(req.params.id);
+    if (!record) throw new NotFoundError('Service record not found.');
+    record.servicesDone = normalizeArray(req.body.servicesDone).filter(Boolean);
+    record.technicians = normalizeArray(req.body.technicians).filter(Boolean);
+    return renderEditForm(res, record, { status: error.status, errorMessage: error.message });
   }
+  await audit(req, { action: 'updated', entity: 'ServiceRecord', entityId: req.params.id, summary: 'Edited a service job (services, parts, technicians or total).' });
+  clearNotificationCache();
+  setFlash(req, 'Service record updated.');
+  return res.redirect('/records');
 };
 
 export const deleteServiceRecord = async (req, res) => {
-  try {
-    const record = await ServiceRecord.findById(req.params.id);
-    if (!record) {
-      return res.status(404).send("Service Record not found");
-    }
-
-    await restorePartsToStock(record.partsUsed);
-    await ServiceRecord.findByIdAndDelete(req.params.id);
-    setFlash(req, "Service record deleted and stock restored.");
-    res.redirect("/records");
-  } catch (error) {
-    console.error("Error deleting a record", error);
-    res.status(500).send("Error deleting a record");
-  }
+  const removed = await serviceRecords.deleteServiceRecord(req.params.id);
+  await audit(req, { action: 'deleted', entity: 'ServiceRecord', entityId: req.params.id, summary: `Deleted a service job that totalled UGX ${Number(removed.totalCost || 0).toLocaleString('en-US')}; its parts went back to stock.` });
+  clearNotificationCache();
+  setFlash(req, 'Service record deleted and stock restored.');
+  return res.redirect('/records');
 };

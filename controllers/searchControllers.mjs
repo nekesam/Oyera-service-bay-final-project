@@ -31,11 +31,17 @@ export const globalSearch = async (req, res) => {
             { email: regex }
         ];
 
-        // Phone is stored as a Number,
-        // so only search it when the query is numeric.
-        if (/^\d+$/.test(searchQuery)) {
+        // Phones are stored as text (0758979048). Older records may still hold a Number,
+        // so compare as text in both cases. Digits only, so "0758 979" style input still matches.
+        const phoneDigits = searchQuery.replace(/\D/g, '');
+        if (phoneDigits) {
             customerConditions.push({
-                phone: Number(searchQuery)
+                $expr: {
+                    $regexMatch: {
+                        input: { $toString: { $ifNull: ['$phone', ''] } },
+                        regex: phoneDigits.replace(/^0/, '')
+                    }
+                }
             });
         }
 

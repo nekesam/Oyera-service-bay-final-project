@@ -1,5 +1,5 @@
 import express from "express";
-import { isAuthenticated } from '../middleware/auth.mjs';
+import { isAuthenticated, isAdminOrSeniorTechnician } from '../middleware/auth.mjs';
 import { validateCustomer } from '../Validation/userValidation.mjs';
 import {
   getCustomerRegistrationPage,
@@ -17,13 +17,13 @@ const router = express.Router();
 // /customers/register
 // /customers/records
 
-router.get('/register', isAuthenticated, getCustomerRegistrationPage);
-router.get('/records', isAuthenticated, getCustomerRecordsPage);
-router.get('/edit/:id', isAuthenticated, getEditCustomerPage);
+router.get('/register', isAdminOrSeniorTechnician, getCustomerRegistrationPage);
+router.get('/records', isAdminOrSeniorTechnician, getCustomerRecordsPage);
+router.get('/edit/:id', isAdminOrSeniorTechnician, getEditCustomerPage);
 
-router.post('/register', isAuthenticated, validateCustomer, createCustomer);
-router.post('/edit/:id', isAuthenticated, validateCustomer, updateCustomer);
-router.post('/delete/:id', isAuthenticated, deleteCustomer);
+router.post('/register', isAdminOrSeniorTechnician, validateCustomer, createCustomer);
+router.post('/edit/:id', isAdminOrSeniorTechnician, validateCustomer, updateCustomer);
+router.post('/delete/:id', isAdminOrSeniorTechnician, deleteCustomer);
 
 router.get('/:id', isAuthenticated, getCustomerDetail);
  

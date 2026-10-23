@@ -43,6 +43,12 @@ const stockSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User' 
   },
+  // Optional. When quantity falls to this number or below, the item shows as "low stock".
+  // Items without one use LOW_STOCK_THRESHOLD from config/business.mjs.
+  reorderLevel: {
+    type: Number,
+    min: 0
+  },
   description: {
     type: String,
     trim: true
@@ -50,6 +56,9 @@ const stockSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
+stockSchema.index({ category: 1 });
+stockSchema.index({ itemName: 1 });
 
 const Stock = mongoose.models.Stock || mongoose.model('Stock', stockSchema);
 
