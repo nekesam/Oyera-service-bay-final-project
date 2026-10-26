@@ -18,9 +18,9 @@ const router = express.Router();
 // };
 
 router.get('/technicians', isAuthenticated, getTechnicianPage);
-router.get('/technicians/register', isAuthenticated, getTechnicianRegisterPage);
-router.post('/technicians/register', isAuthenticated, validateTechnician, registerTechnician);
-router.get('/technicians/edit/:id', isAuthenticated, getEditTechnicianForm);
+router.get('/technicians/register', isAdmin, getTechnicianRegisterPage);
+router.post('/technicians/register', isAdmin, validateTechnician, registerTechnician);
+router.get('/technicians/edit/:id', isAdmin, getEditTechnicianForm);
 router.post('/technicians/edit/:id', isAuthenticated, isAdmin, validateTechnician, updateTechnician);
 router.post('/technicians/delete/:id', isAuthenticated, isAdmin, deleteTechnician);
 router.get('/technicians/assign', isAuthenticated, (req, res) => res.redirect('/addRecord'));

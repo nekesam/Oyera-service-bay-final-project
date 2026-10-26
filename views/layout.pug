@@ -4,7 +4,11 @@ html(lang='en')
     meta(charset='UTF-8')
     meta(name='viewport' content='width=device-width, initial-scale=1.0')
 
-    title Vehicles Management
+    title #{pageTitle ? pageTitle + ' | ' : ''}Oyera Auto Service Bay
+
+    link(rel='preconnect' href='https://fonts.googleapis.com')
+    link(rel='preconnect' href='https://fonts.gstatic.com' crossorigin)
+    link(rel='stylesheet' href='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap')
 
     //- Bootsrap CSS
     link(
@@ -29,6 +33,9 @@ html(lang='en')
     link(rel='stylesheet' href='/css/layout.css')
 
     block headStyles
+
+    //- design system last, so it wins over the per-page stylesheets above
+    link(rel='stylesheet' href='/css/ui.css')
 
   body
 
@@ -85,7 +92,8 @@ html(lang='en')
           span#currentDate
 
 
-        //- Notifications
+        //- Notifications (real data, see services/notificationService.mjs)
+        - var bell = (typeof notifications !== 'undefined' && notifications) ? notifications : { items: [] }
         .notification-wrapper
 
           button.notification-btn(
@@ -96,43 +104,30 @@ html(lang='en')
 
             i.fa-regular.fa-bell
 
-            span.notification-badge 3
+            if bell.items.length
+              span.notification-badge= bell.items.length
 
           .notification-dropdown#notificationDropdown
 
             .dropdown-header
               .notification-title Notifications
-              span.notification-count-text 3 new
+              span.notification-count-text #{bell.items.length ? bell.items.length + ' need attention' : 'All clear'}
 
-            .notification-item
-              .notification-item-icon.blue
-                i.fa-solid.fa-car
+            if !bell.items.length
+              .notification-item
+                .notification-item-icon.green
+                  i.fa-solid.fa-check
+                .notification-item-content
+                  strong Nothing needs attention
+                  span Stock levels and jobs look fine.
 
-              .notification-item-content
-                strong New vehicle registered
-                span A new vehicle was added to the system.
-                small 10 minutes ago
-
-            .notification-item
-              .notification-item-icon.orange
-                i.fa-solid.fa-box
-
-              .notification-item-content
-                strong Stock alert
-                span Some spare parts are running low.
-                small 35 minutes ago
-
-            .notification-item
-              .notification-item-icon.green
-                i.fa-solid.fa-check
-
-              .notification-item-content
-                strong Service completed
-                span Vehicle service record updated.
-                small 1 hour ago
-
-            .notification-footer
-              button(type='button') View notifications
+            each item in bell.items
+              a.notification-item(href=item.href style='text-decoration:none;color:inherit')
+                .notification-item-icon(class=item.tone)
+                  i.fa-solid(class=item.icon)
+                .notification-item-content
+                  strong= item.title
+                  span= item.text
 
 
         //- Divider
@@ -158,11 +153,12 @@ html(lang='en')
 
               if user
                 strong= user.fullName
-              else
-                strong Admin
+                span= user.role
+              else 
+                span Administrator
+                strong Administrator
 
-              span Profile
-
+                
             i.fa-solid.fa-chevron-down.profile-chevron
 
 
@@ -184,23 +180,18 @@ html(lang='en')
                 else
                   strong Admin
 
-                span Administrator
+                span= user ? user.role : ''
 
             .profile-divider
 
-            .profile-option
-              i.fa-regular.fa-user
-              span My Profile
-
-            .profile-option
-              i.fa-solid.fa-gear
-              span Account Settings
-
-            .profile-option
-              i.fa-regular.fa-circle-question
-              span Help & Support
-
-            .profile-divider
+            if user && user.role === 'Admin'
+              a.profile-option(href='/signup')
+                i.fa-regular.fa-user
+                span Add User
+              a.profile-option(href='/audit')
+                i.fa-solid.fa-clock-rotate-left
+                span Audit log
+              .profile-divider
 
             a.profile-option.logout-option(href='/logout')
               i.fa-solid.fa-arrow-right-from-bracket
@@ -208,8 +199,9 @@ html(lang='en')
 
 
     if flash && flash.message
-      .app-flash(class='app-flash--' + (flash.type || 'success') role='status')
-        i.app-flash__icon.fas(class=flash.type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-check')
+      - var flashBad = flash.type === 'error' || flash.type === 'danger'
+      .app-flash(class='app-flash--' + (flashBad ? 'danger' : (flash.type || 'success')) role='status')
+        i.app-flash__icon.fas(class=flashBad ? 'fa-circle-exclamation' : 'fa-circle-check')
         span.app-flash__text= flash.message
         button.app-flash__close(type='button' aria-label='Dismiss message') &times;
 

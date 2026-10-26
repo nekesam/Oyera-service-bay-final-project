@@ -2,6 +2,11 @@ import ServiceRecord from "../models/ServiceRecord.mjs";
 import Stock from "../models/Stock.mjs";
 import User from "../models/User.mjs";
 import Customers from "../models/Customers.mjs";
+import Vehicle from "../models/Vehicle.mjs";
+import { withBilling } from "../services/billing.mjs";
+import { findLowStock } from "../services/inventoryService.mjs";
+import { jobStatusCounts, moneySummary, revenueByMonth, technicianWorkload, topParts } from "../services/analytics.mjs";
+import { JOB_STATUSES } from "../config/business.mjs";
 
 export const dashboardPermissionsByRole = {
 Admin: {
@@ -12,6 +17,7 @@ showServices: true,
 showServiceRegistration: true,
 canManageServices: true,
 showTechnicians: true,
+canManageTechnicians: true,
 showInventory: true,
 canManageStock: true,
 showPayments: true,
@@ -27,12 +33,12 @@ canManageVehicles: true,
 showServices: true,
 showServiceRegistration: true,
 canManageServices: true,
-showTechnicians: false,
+showTechnicians: true,
+canManageTechnicians: false,
 showInventory: true,
 canManageStock: true,
 showPayments: false,
 showReports: true,
-showSettings: false,
 showQuickServiceEntry: true,
 },
 
@@ -43,7 +49,8 @@ canManageVehicles: false,
 showServices: true,
 showServiceRegistration: true,
 canManageServices: true,
-showTechnicians: false,
+showTechnicians: true,
+canManageTechnicians: false,
 showInventory: true,
 canManageStock: false,
 showPayments: false,
@@ -66,203 +73,75 @@ return Number.isFinite(parsed) ? parsed : 0;
 };
 
 export const getDashboard = async (req, res) => {
-try {
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const tomorrowStart = new Date(todayStart);
+  tomorrowStart.setDate(tomorrowStart.getDate() + 1);
 
-	//today's date range
+  const [
+    recentRecords,
+    jobsToday,
+    todayMoney,
+    customers,
+    vehicles,
+    stockValue,
+    lowStock,
+    money,
+    months,
+    parts,
+    workload,
+    statusCounts,
+  ] = await Promise.all([
+    ServiceRecord.find()
+      .populate('customer', 'firstName lastName')
+      .populate('vehicle', 'registrationNo vehicleName')
+      .populate('technicians', 'fullName')
+      .sort({ date: -1 })
+      .limit(6)
+      .lean(),
+    ServiceRecord.countDocuments({ date: { $gte: todayStart, $lt: tomorrowStart } }),
+    ServiceRecord.aggregate([
+      { $match: { date: { $gte: todayStart, $lt: tomorrowStart } } },
+      { $group: { _id: null, revenue: { $sum: '$totalCost' } } },
+    ]),
+    Customers.countDocuments(),
+    Vehicle.countDocuments(),
+    Stock.aggregate([
+      { $group: { _id: null, value: { $sum: { $multiply: [{ $ifNull: ['$quantity', 0] }, { $ifNull: ['$unitPrice', 0] }] } } } },
+    ]),
+    findLowStock(6),
+    moneySummary(),
+    revenueByMonth(6),
+    topParts(5),
+    technicianWorkload(5),
+    jobStatusCounts(),
+  ]);
 
-const todayStart = new Date();
-todayStart.setHours(0, 0, 0, 0);
+  const permissions = getRolePermissions(req.session?.userRole);
+  const activeJobs = (statusCounts.Booked || 0) + (statusCounts['In progress'] || 0) + (statusCounts['Ready for pickup'] || 0);
 
-const tomorrowStart = new Date(todayStart);
-tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+  const stats = {
+    activeJobs,
+    jobsToday,
+    todayRevenue: toNumber(todayMoney[0]?.revenue),
+    customers,
+    vehicles,
+    inventoryValue: toNumber(stockValue[0]?.value),
+    ...money,
+  };
 
-//fetch from database
-const [
-  recentRecords,
-  recentStockItems,
-  totalServiceRecords,
-  totalCustomers,
-  totalUsers,
-  totalStockItems,
-  distinctVehicles,
-  todayCars,
-  totalRevenueAggregation,
-  todayRevenueAggregation,
-  partsSoldAggregation,
-  stockValueAggregation,
-] = await Promise.all([
+  // Data for the browser charts. "<" is escaped so a stock name can never close the <script> tag.
+  const charts = { months, statusCounts, statusOrder: JOB_STATUSES };
+  const chartsJson = JSON.stringify(charts).replace(/</g, '\\u003c');
 
- 
-  ServiceRecord.find()
-    .populate(
-      "customer",
-      "firstName lastName phone email"
-    )
-    .populate(
-      "vehicle",
-      "registrationNo vehicleName vehicleType"
-    )
-    .populate(
-      "technicians",
-      "fullName"
-    )
-    .sort({ date: -1 })
-    .limit(5),
-
-  Stock.find()
-    .sort({ date: -1, createdAt: -1 })
-    .limit(5),
-
-  ServiceRecord.countDocuments(),
-
-  Customers.countDocuments(),
-
-  User.countDocuments(),
-
-  Stock.countDocuments(),
-
-  ServiceRecord.distinct("vehicle"),
-
-  ServiceRecord.countDocuments({
-    date: {
-      $gte: todayStart,
-      $lt: tomorrowStart,
-    },
-  }),
-
-  
-  ServiceRecord.aggregate([
-    {
-      $group: {
-        _id: null,
-        totalRevenue: {
-          $sum: "$totalCost",
-        },
-      },
-    },
-  ]),
-
-  
-  ServiceRecord.aggregate([
-    {
-      $match: {
-        date: {
-          $gte: todayStart,
-          $lt: tomorrowStart,
-        },
-      },
-    },
-    {
-      $group: {
-        _id: null,
-        todayRevenue: {
-          $sum: "$totalCost",
-        },
-      },
-    },
-  ]),
-
-  
-  ServiceRecord.aggregate([
-    {
-      $unwind: {
-        path: "$partsUsed",
-        preserveNullAndEmptyArrays: true,
-      },
-    },
-    {
-      $group: {
-        _id: null,
-        partsSold: {
-          $sum: "$partsUsed.quantity",
-        },
-      },
-    },
-  ]),
-
-  
-  Stock.aggregate([
-    {
-      $group: {
-        _id: null,
-        totalInventoryValue: {
-          $sum: {
-            $multiply: [
-              {
-                $ifNull: ["$quantity", 0],
-              },
-              {
-                $ifNull: ["$unitPrice", 0],
-              },
-            ],
-          },
-        },
-      },
-    },
-  ]),
-]);
-
-
-const totalRevenue = toNumber(
-  totalRevenueAggregation[0]?.totalRevenue
-);
-
-const todayRevenue = toNumber(
-  todayRevenueAggregation[0]?.todayRevenue
-);
-
-const partsSold = toNumber(
-  partsSoldAggregation[0]?.partsSold
-);
-
-const inventoryValue = toNumber(
-  stockValueAggregation[0]?.totalInventoryValue
-);
-
-const totalCars = distinctVehicles.length;
-
-const dashboardStats = {
-  totalRevenue,
-  todayRevenue,
-
-  totalCars,
-
-  carsToday: todayCars,
-
-  activeJobs: totalServiceRecords,
-
-  totalCustomers,
-
-  totalUsers,
-
-  totalStockItems,
-
-  partsSold,
-
-  inventoryValue,
-};
-
-const role = req.session?.userRole;
-
-const permissions = getRolePermissions(role);
-
-return res.render("dashboard", {
-  dashboardStats,
-  recentRecords,
-  recentStockItems,
-  permissions,
-});
-
-} catch (error) {
-console.error(
-"Error fetching dashboard data:",
-error
-);
-
-return res
-  .status(500)
-  .send("Error loading dashboard metrics");
-
-
-}
+  return res.render('dashboard', {
+    pageTitle: 'Dashboard',
+    stats,
+    recentRecords: recentRecords.map(withBilling),
+    lowStock,
+    parts,
+    workload,
+    chartsJson,
+    permissions,
+  });
 };

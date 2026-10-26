@@ -2,11 +2,43 @@ import Customers from '../models/Customers.mjs';
 import Vehicle from '../models/Vehicle.mjs';
 import ServiceRecord from '../models/ServiceRecord.mjs';
 import { setFlash } from '../utils/flash.mjs';
+import { audit } from '../services/auditService.mjs';
+import { clearNotificationCache } from '../services/notificationService.mjs';
+import { normalizePhone } from '../utils/phone.mjs';
+import { whyCustomerCannotBeDeleted } from '../services/deletionGuards.mjs';
 
 const buildInitials = (name) => {
   const parts = String(name || '').split(' ').filter(Boolean).slice(0, 2);
   const letters = parts.map((part) => part[0].toUpperCase()).join('');
   return letters || '--';
+};
+
+const escapeRegExp = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const normalizeCustomerPhone = normalizePhone;
+
+const normalizeCustomerName = (value) => String(value || '').trim().replace(/\s+/g, ' ').toLowerCase();
+
+const findDuplicateCustomer = async ({ firstName, lastName, phone, excludeId }) => {
+  const namePattern = (value) => new RegExp(
+    `^${String(value).trim().split(/\s+/).map(escapeRegExp).join('\\s+')}$`,
+    'i'
+  );
+  const query = {
+    firstName: namePattern(firstName),
+    lastName: namePattern(lastName),
+  };
+
+  if (excludeId) {
+    query._id = { $ne: excludeId };
+  }
+
+  const possibleDuplicates = await Customers.find(query).select('firstName lastName phone').lean();
+  return possibleDuplicates.find((customer) =>
+    normalizeCustomerName(customer.firstName) === normalizeCustomerName(firstName)
+    && normalizeCustomerName(customer.lastName) === normalizeCustomerName(lastName)
+    && normalizeCustomerPhone(customer.phone) === normalizeCustomerPhone(phone)
+  );
 };
 
 export const getCustomerRegistrationPage = (req, res) => {
@@ -39,8 +71,24 @@ export const createCustomer = async (req, res) => {
       });
     }
 
-    const newCustomer = new Customers(req.body);
+    const duplicateCustomer = await findDuplicateCustomer(req.body);
+    if (duplicateCustomer) {
+      return res.status(400).render('customers', {
+        formData: {
+          customerId: req.body?.customerId || '',
+          firstName: req.body?.firstName || '',
+          lastName: req.body?.lastName || '',
+          phone: req.body?.phone || '',
+          email: req.body?.email || '',
+          address: req.body?.address || '',
+        },
+        errorMessage: 'A customer with the same name and phone number is already registered.',
+      });
+    }
+
+    const newCustomer = new Customers({ ...req.body, phone: normalizePhone(req.body.phone) });
     await newCustomer.save();
+    await audit(req, { action: 'created', entity: 'Customers', entityId: newCustomer._id, summary: `Registered customer ${newCustomer.firstName} ${newCustomer.lastName}.` });
     setFlash(req, `Customer "${newCustomer.firstName} ${newCustomer.lastName}" registered successfully.`);
     return res.redirect('/customers/register');
   } catch (error) {
@@ -96,7 +144,21 @@ export const updateCustomer = async (req, res) => {
       });
     }
 
-    await Customers.findByIdAndUpdate(req.params.id, { ...req.body });
+    const duplicateCustomer = await findDuplicateCustomer({ ...req.body, excludeId: req.params.id });
+    if (duplicateCustomer) {
+      const existing = await Customers.findById(req.params.id).lean();
+      return res.status(400).render('editCustomer', {
+        customer: {
+          ...(existing || {}),
+          ...req.body,
+          _id: req.params.id,
+        },
+        errorMessage: 'Another customer with the same name and phone number is already registered.',
+      });
+    }
+
+    await Customers.findByIdAndUpdate(req.params.id, { ...req.body, phone: normalizePhone(req.body.phone) });
+    await audit(req, { action: 'updated', entity: 'Customers', entityId: req.params.id, summary: `Updated details for ${req.body.firstName} ${req.body.lastName}.` });
     setFlash(req, 'Customer details updated successfully.');
     return res.redirect('/customers/records');
   } catch (error) {
@@ -115,7 +177,13 @@ export const updateCustomer = async (req, res) => {
 
 export const deleteCustomer = async (req, res) => {
   try {
-    await Customers.findByIdAndDelete(req.params.id);
+    const blocker = await whyCustomerCannotBeDeleted(req.params.id);
+    if (blocker) {
+      setFlash(req, blocker, 'danger');
+      return res.redirect('/customers/records');
+    }
+    const removed = await Customers.findByIdAndDelete(req.params.id);
+    await audit(req, { action: 'deleted', entity: 'Customers', entityId: req.params.id, summary: `Deleted customer ${removed ? removed.firstName + ' ' + removed.lastName : 'unknown'}.` });
     setFlash(req, 'Customer deleted.');
     return res.redirect('/customers/records');
   } catch (error) {

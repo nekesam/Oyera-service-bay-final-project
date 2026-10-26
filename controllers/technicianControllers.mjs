@@ -323,7 +323,7 @@ export const updateTechnician = async (req, res) => {
         email: cleanEmail || undefined,
         phone: cleanPhone || undefined,
       },
-      { new: true, runValidators: true }
+      { returnDocument: 'after', runValidators: true }
     );
 
     if (!updated) {

@@ -1,0 +1,65 @@
+extends layout
+
+block content
+  .main-container
+    - const activePage = 'audit'
+    include partials/sidebar
+
+    main.content
+      .ui-page
+        - const pageLink = (page) => { const sp = new URLSearchParams(); if (entity) sp.set('entity', entity); if (page > 1) sp.set('page', page); const t = sp.toString(); return t ? '?' + t : '?' }
+        - const labels = { ServiceRecord: 'Service jobs', Stock: 'Stock', Customers: 'Customers', Vehicle: 'Vehicles', User: 'Users' }
+        - const tones = { created: 'green', updated: 'blue', deleted: 'red', payment: 'amber', status: 'sky' }
+
+        header.ui-page-header
+          div
+            .ui-crumbs
+              a(href='/dashboard') Dashboard
+              i.fas.fa-chevron-right
+              span Audit log
+            h1 Audit log
+            p A permanent record of who changed what, and when. Only Admins can see this page.
+
+        section.ui-card
+          form.ui-toolbar(method='get' action='/audit')
+            select.ui-select(name='entity' aria-label='Filter by area' onchange='this.form.submit()')
+              option(value='') Everything
+              each e in entities
+                option(value=e selected=entity === e)= labels[e] || e
+            noscript
+              button.ui-btn(type='submit') Filter
+
+          if entries.length
+            .ui-table-wrap
+              table.ui-table
+                thead
+                  tr
+                    th When
+                    th Who
+                    th Area
+                    th Action
+                    th What happened
+                tbody
+                  each entry in entries
+                    tr
+                      td.muted= new Date(entry.at).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+                      td
+                        strong= entry.actorName
+                        div.muted= entry.actorRole || ''
+                      td= labels[entry.entity] || entry.entity
+                      td
+                        span.ui-badge(class=tones[entry.action] || 'grey')= entry.action
+                      td= entry.summary
+            .ui-pagination
+              span Showing #{pagination.from}–#{pagination.to} of #{pagination.totalItems} entries
+              .pager
+                if pagination.hasPrev
+                  a.ui-btn.small(href=pageLink(pagination.page - 1)) ← Newer
+                span.ui-btn.small(style='pointer-events:none;background:var(--bg)') Page #{pagination.page} of #{pagination.totalPages}
+                if pagination.hasNext
+                  a.ui-btn.small(href=pageLink(pagination.page + 1)) Older →
+          else
+            .ui-empty
+              i.fas.fa-clock-rotate-left
+              strong Nothing recorded yet
+              span Changes to jobs, payments and stock will appear here.

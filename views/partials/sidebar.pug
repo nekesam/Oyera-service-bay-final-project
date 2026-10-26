@@ -1,40 +1,62 @@
+- var navCounts = (typeof notifications !== 'undefined' && notifications && notifications.counts) ? notifications.counts : {}
 aside.side-bar
   ul.sidebar-menu
     li
       a(class=activePage === 'dashboard' ? 'active' : '' href='/dashboard')
         i.fa-solid.fa-chart-line
-        |  Dashboard
-    if typeof permissions === 'undefined' || permissions.showCustomers
+        span Dashboard
+    li
+      a(class=activePage === 'myjobs' ? 'active' : '' href='/my-jobs')
+        i.fa-solid.fa-clipboard-check
+        span My jobs
+
+    li.menu-label Workshop
+    if typeof permissions === 'undefined' || permissions.showServices
       li
-        a(class=activePage === 'customers' ? 'active' : '' href='/customers/records')
-          i.fa-solid.fa-users
-          |  Customers
+        a(class=activePage === 'services' ? 'active' : '' href='/records')
+          i.fa-solid.fa-screwdriver-wrench
+          span Services
+          if navCounts.readyForPickup
+            span.menu-count= navCounts.readyForPickup
     if typeof permissions === 'undefined' || permissions.showVehicles
       li
         a(class=activePage === 'vehicles' ? 'active' : '' href='/vehicles')
           i.fa-solid.fa-car
-          |  Vehicles
-    if typeof permissions === 'undefined' || permissions.showTechnicians
+          span Vehicles
+    if typeof permissions === 'undefined' || permissions.showCustomers
       li
-        a(class=activePage === 'technicians' ? 'active' : '' href='/technicians')
-          i.fa-solid.fa-user-gear
-          |  Technicians
+        a(class=activePage === 'customers' ? 'active' : '' href='/customers/records')
+          i.fa-solid.fa-users
+          span Customers
+
+    li.menu-label Stock &amp; team
     if typeof permissions === 'undefined' || permissions.showInventory
       li
         a(class=activePage === 'inventory' ? 'active' : '' href='/registerStock/stockList')
           i.fa-solid.fa-boxes-stacked
-          |  Stock
-    if typeof permissions === 'undefined' || permissions.showServices
+          span Stock
+          if navCounts.lowStock
+            span.menu-count= navCounts.lowStock
+    if typeof permissions === 'undefined' || permissions.showTechnicians
       li
-        a(class=activePage === 'services' ? 'active' : '' href='/service-records')
-          i.fa-solid.fa-screwdriver-wrench
-          |  Services
+        a(class=activePage === 'technicians' ? 'active' : '' href='/technicians')
+          i.fa-solid.fa-user-gear
+          span Technicians
+
     if typeof permissions === 'undefined' || permissions.showReports
+      li.menu-label Insights
       li
         a(class=activePage === 'reports' ? 'active' : '' href='/reports')
           i.fa-solid.fa-chart-pie
-          |  Reports
+          span Reports
+    if user && user.role === 'Admin'
+      li
+        a(class=activePage === 'audit' ? 'active' : '' href='/audit')
+          i.fa-solid.fa-clock-rotate-left
+          span Audit log
+
+    li.menu-label Account
     li
       a(href='/logout')
         i.fas.fa-sign-out-alt
-        |  Logout
+        span Logout

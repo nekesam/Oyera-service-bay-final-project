@@ -11,6 +11,9 @@ head
     .row.justify-content-center
       .col-md-6.col-lg-5
         .signup-card
+          a.back-dashboard(href='/dashboard')
+            i.fa-solid.fa-arrow-left
+            |  Back to Dashboard
           img(src='/images/bay-logo.png' alt='Oyera Auto Service Bay Logo', class="logo")
           h2.text-center.mb-4 Create Account
           if errorMessage

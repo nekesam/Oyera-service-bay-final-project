@@ -11,7 +11,7 @@ block content
       .stock-page
         - const totalItems = allStock.length
         - const totalQuantity = allStock.reduce((sum, stock) => sum + (Number(stock.quantity) || 0), 0)
-        - const lowStockItems = allStock.filter((stock) => (Number(stock.quantity) || 0) < 5).length
+        - const lowStockItems = allStock.filter((stock) => stock.isLow).length
         - const categoryCount = new Set(allStock.map((stock) => stock.category).filter(Boolean)).size
 
         .page-heading
@@ -94,7 +94,7 @@ block content
                   if allStock.length
                     each stock, index in allStock
                       - const quantity = Number(stock.quantity) || 0
-                      tr(data-href=`/registerStock/stock/${stock._id}` data-filter=(quantity > 0 ? 'in stock' : 'out of stock'))
+                      tr(data-href=`/registerStock/stock/${stock._id}` data-filter=(quantity === 0 ? 'out of stock' : (stock.isLow ? 'low stock' : 'in stock')))
                         td= index + 1
                         td= new Date(stock.dateAdded || stock.createdAt).toLocaleDateString()
                         td= stock.itemName
@@ -102,7 +102,7 @@ block content
                         td= (stock.unitPrice || stock.price || 0).toLocaleString()
                         td= quantity
                         td
-                          span.status-badge(class=quantity > 0 ? 'in-stock' : 'out-of-stock')= quantity > 0 ? 'In Stock' : 'Out of Stock'
+                          span.status-badge(class=quantity === 0 ? 'out-of-stock' : (stock.isLow ? 'low-stock' : 'in-stock'))= quantity === 0 ? 'Out of Stock' : (stock.isLow ? 'Low Stock' : 'In Stock')
                         td
                           .table-actions
                             a.action-link.view(href=`/registerStock/stock/${stock._id}`) View

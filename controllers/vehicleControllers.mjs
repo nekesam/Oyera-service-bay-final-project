@@ -3,6 +3,9 @@ import ServiceRecord from '../models/ServiceRecord.mjs';
 import Customers from '../models/Customers.mjs';
 import { dashboardPermissionsByRole } from './dashboardControllers.mjs';
 import { setFlash } from '../utils/flash.mjs';
+import { audit } from '../services/auditService.mjs';
+import { isServiceDue, nextServiceDate } from '../services/vehicleService.mjs';
+import { whyVehicleCannotBeDeleted } from '../services/deletionGuards.mjs';
 
 const getRolePermissions = (role) => {
   return dashboardPermissionsByRole[role] || dashboardPermissionsByRole.Technician;
@@ -114,7 +117,7 @@ export const getVehiclePage = async (req, res) => {
       ServiceRecord.aggregate([
         {
           $group: {
-            _id: '$carPlate',
+            _id: '$vehicle',
             serviceVisits: { $sum: 1 },
           },
         },
@@ -137,8 +140,12 @@ export const getVehiclePage = async (req, res) => {
       heavyVehicles,
     };
 
-    const vehicleRecords = vehicles.map((vehicle) => ({
+    // "Service Due" is worked out from the last service date, not typed in by hand
+    const withDue = vehicles.map((vehicle) => ({ ...vehicle, status: isServiceDue(vehicle) ? 'Service Due' : 'Active' }));
+
+    const vehicleRecords = withDue.map((vehicle) => ({
       ...vehicle,
+      nextServiceDisplay: formatDate(nextServiceDate(vehicle)),
       color: vehicle.color || 'N/A',
       vehicleTypeLabel: vehicleTypeLabel[vehicle.vehicleType] || 'Small Vehicle',
       typeClass: typeClass[vehicle.vehicleType] || 'small',
@@ -147,17 +154,14 @@ export const getVehiclePage = async (req, res) => {
       iconClass: vehicle.vehicleType === 'small' ? 'fa-car' : 'fa-truck',
     }));
 
-    const vehiclesByPlate = new Map(
-      vehicles.map((vehicle) => [normalizePlate(vehicle.registrationNo), vehicle])
-    );
+    const vehiclesById = new Map(vehicles.map((vehicle) => [String(vehicle._id), vehicle]));
 
     const popularVehicles = serviceCountByPlate.map((entry, index) => {
-      const normalizedPlate = normalizePlate(entry._id);
-      const vehicle = vehiclesByPlate.get(normalizedPlate);
+      const vehicle = vehiclesById.get(String(entry._id));
 
       return {
         rank: index + 1,
-        name: vehicle?.vehicleName || normalizedPlate || 'Unknown Vehicle',
+        name: vehicle ? `${vehicle.vehicleName} (${vehicle.registrationNo})` : 'Unknown Vehicle',
         iconClass: vehicle?.vehicleType === 'small' ? 'fa-car' : 'fa-truck',
         serviceVisits: toNumber(entry.serviceVisits),
       };
@@ -379,7 +383,7 @@ export const updateVehicle = async (req, res) => {
         status,
         lastService: lastService ? new Date(lastService) : null,
       },
-      { new: true, runValidators: true }
+      { returnDocument: 'after', runValidators: true }
     );
 
     if (!updatedVehicle) {
@@ -415,7 +419,13 @@ export const updateVehicle = async (req, res) => {
 
 export const deleteVehicle = async (req, res) => {
   try {
-    await Vehicle.findByIdAndDelete(req.params.id);
+    const blocker = await whyVehicleCannotBeDeleted(req.params.id);
+    if (blocker) {
+      setFlash(req, blocker, 'danger');
+      return res.redirect('/vehicles');
+    }
+    const removed = await Vehicle.findByIdAndDelete(req.params.id);
+    await audit(req, { action: 'deleted', entity: 'Vehicle', entityId: req.params.id, summary: `Deleted vehicle ${removed ? removed.registrationNo : 'unknown'}.` });
     setFlash(req, 'Vehicle deleted.');
     return res.redirect('/vehicles');
   } catch (error) {

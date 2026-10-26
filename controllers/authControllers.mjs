@@ -1,6 +1,7 @@
 import User from "../models/User.mjs";
 import bcrypt from "bcryptjs";
 import { setFlash } from "../utils/flash.mjs";
+import { audit } from '../services/auditService.mjs';
 
 // Sends empty form fields and no error message so the form starts clean.
 export const getRegisterForm = (req, res) =>{
@@ -73,6 +74,7 @@ export const registerUser = async (req, res) =>{
         }
         const newUser = new User(userData)
         await newUser.save();
+        await audit(req, { action: 'created', entity: 'User', entityId: newUser._id, summary: `Created user account ${newUser.fullName} (${newUser.role}).` });
         setFlash(req, 'Account created successfully. Please log in.')
         res.redirect('/login')
     } catch (error) {
@@ -104,6 +106,8 @@ export const loginUser = async (req, res) => {
         const query = isEmail ? {email: identifier} : {phone: identifier};
         const user = await User.findOne(query);
         if(user && await bcrypt.compare(password, user.password)){
+            // A new session id on login prevents session-fixation attacks
+            await new Promise((resolve, reject) => req.session.regenerate((err) => (err ? reject(err) : resolve())))
             req.session.userId = user._id
             req.session.userRole = user.role
             req.session.userName = user.fullName
@@ -150,7 +154,7 @@ export const editProfile = async (req, res) => {
     try {
         const userId = req.params.id || req.session.userId;
         const {fullName, email, phone} = req.body;
-        const updatedUser = await User.findByIdAndUpdate(userId, {fullName, email, phone}, {new: true});
+        const updatedUser = await User.findByIdAndUpdate(userId, {fullName, email, phone}, {returnDocument: 'after'});
         if(updatedUser){
             setFlash(req, 'Profile updated successfully.');
             res.redirect('/dashboard');
@@ -165,7 +169,12 @@ export const editProfile = async (req, res) => {
 
 export const deleteUser = async(req, res)=>{
 	try {
-		await User.findByIdAndDelete(req.params.id)
+		if (String(req.params.id) === String(req.session.userId)) {
+			setFlash(req, 'You cannot delete your own account while logged in.', 'danger')
+			return res.redirect('/registerUser/userRecords')
+		}
+		const removed = await User.findByIdAndDelete(req.params.id)
+		await audit(req, { action: 'deleted', entity: 'User', entityId: req.params.id, summary: `Deleted user account ${removed ? removed.fullName + ' (' + removed.role + ')' : 'unknown'}.` })
 		setFlash(req, 'User deleted.')
 		res.redirect('/registerUser/userRecords')
 	} catch (error) {

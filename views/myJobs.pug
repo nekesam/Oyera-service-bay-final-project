@@ -1,0 +1,61 @@
+extends layout
+include partials/badges
+
+block content
+  .main-container
+    - const activePage = 'myjobs'
+    include partials/sidebar
+
+    main.content
+      .ui-page
+        header.ui-page-header
+          div
+            .ui-crumbs
+              a(href='/dashboard') Dashboard
+              i.fas.fa-chevron-right
+              span My jobs
+            h1 My jobs
+            p The open jobs assigned to you, #{user ? user.fullName : ''}. Move each one along as you work.
+
+        if jobs.length
+          .ui-grid.cols-2
+            each job in jobs
+              article.ui-card
+                .ui-card-head
+                  h3
+                    if job.customer
+                      = `${job.customer.firstName} ${job.customer.lastName}`
+                    else
+                      | Unknown customer
+                  +jobBadge(job.jobStatus)
+                .ui-card-body
+                  dl.ui-dl(style='grid-template-columns:90px 1fr')
+                    dt Vehicle
+                    dd #{job.vehicle ? job.vehicle.vehicleName : 'N/A'} · #{job.vehicle ? job.vehicle.registrationNo : ''}
+                    dt Work
+                    dd= (job.servicesDone || []).join(', ') || '—'
+                    dt Booked
+                    dd= new Date(job.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                  .ui-actions(style='margin-top:18px')
+                    if job.jobStatus === 'Booked'
+                      form(action=`/records/${job._id}/status` method='POST')
+                        input(type='hidden' name='status' value='In progress')
+                        input(type='hidden' name='returnTo' value='/my-jobs')
+                        button.ui-btn.primary.small(type='submit') Start work
+                    if job.jobStatus === 'In progress'
+                      form(action=`/records/${job._id}/status` method='POST')
+                        input(type='hidden' name='status' value='Ready for pickup')
+                        input(type='hidden' name='returnTo' value='/my-jobs')
+                        button.ui-btn.primary.small(type='submit') Mark ready for pickup
+                    if job.jobStatus === 'Ready for pickup'
+                      form(action=`/records/${job._id}/status` method='POST')
+                        input(type='hidden' name='status' value='Collected')
+                        input(type='hidden' name='returnTo' value='/my-jobs')
+                        button.ui-btn.primary.small(type='submit') Mark collected
+                    a.ui-btn.small(href=`/records/${job._id}`) Open
+        else
+          section.ui-card
+            .ui-empty
+              i.fas.fa-clipboard-check
+              strong You're all caught up
+              span No open jobs are assigned to you right now.

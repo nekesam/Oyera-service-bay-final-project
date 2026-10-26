@@ -21,6 +21,20 @@
             border-radius: 8px;
         }
 
+        .back-dashboard {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            color: #0d6efd;
+            font-weight: 500;
+            margin-bottom: 20px;
+     }
+
+.back-dashboard:hover {
+    text-decoration: underline;
+}
+
         .btn-primary {
             border-radius: 8px;
         }
